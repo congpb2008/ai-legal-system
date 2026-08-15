@@ -1,0 +1,95 @@
+{
+  "contract_version": "1.0",
+
+  "answer_id": "ANS-2026-000001",
+
+  "query": {
+    "query_id": "Q-2026-000001",
+    "original": "Quy định về đối tượng áp dụng của quy chế mua sắm máy chủ?"
+  },
+
+  "status": "SUCCESS",
+
+  "answer": {
+    "summary": "Quy chế áp dụng đối với các đơn vị tham gia mua sắm, thẩm định và phê duyệt trong ngân hàng.",
+
+    "details": [
+      {
+        "type": "PARAGRAPH",
+        "content": "Theo Điều 2 của Quyết định số 15/2026/QĐ-NH, quy chế áp dụng cho các đơn vị tham gia mua sắm, thẩm định và phê duyệt."
+      },
+      {
+        "type": "PARAGRAPH",
+        "content": "Trong phạm vi quy định hiện tại, Phòng Công nghệ Thông tin là một trong các đối tượng được liệt kê."
+      }
+    ]
+  },
+
+  "citations": [
+    {
+      "citation_id": "CIT-000001",
+
+      "document": {
+        "document_id": "DOC-2026-000001",
+        "title": "Quyết định về việc ban hành Quy chế mua sắm máy chủ",
+        "document_number": "15/2026/QĐ-NH"
+      },
+
+      "reference": {
+        "canonical_reference": "Điều 2",
+        "node_id": "NODE-0006"
+      },
+
+      "source": {
+        "page": 3,
+        "start_line": 1,
+        "end_line": 4
+      }
+    },
+    {
+      "citation_id": "CIT-000002",
+
+      "document": {
+        "document_id": "DOC-2026-000001"
+      },
+
+      "reference": {
+        "canonical_reference": "Điều 2 Điểm a",
+        "node_id": "NODE-0007"
+      },
+
+      "source": {
+        "page": 3,
+        "start_line": 5,
+        "end_line": 6
+      }
+    }
+  ],
+
+  "evidence": [
+    {
+      "evidence_id": "EV-000001",
+      "rank": 1
+    },
+    {
+      "evidence_id": "EV-000002",
+      "rank": 2
+    }
+  ],
+
+  "confidence": {
+    "level": "HIGH",
+    "score": 0.96
+  },
+
+  "limitations": [
+    "Câu trả lời chỉ dựa trên các tài liệu hiện có trong phạm vi truy xuất.",
+    "Không thay thế cho ý kiến tư vấn pháp lý."
+  ],
+
+  "generation": {
+    "model": "gpt-5.5",
+    "generated_at": "2026-08-06T09:20:00Z",
+    "latency_ms": 812
+  }
+}

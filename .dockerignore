@@ -1,0 +1,55 @@
+# Version control
+.git
+.gitignore
+.github
+
+# Python / build artifacts
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+build/
+dist/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test & lint caches
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+.mypy_cache/
+
+# Local runtime storage & database (MUST NOT BE BAKED INTO IMAGE)
+storage/
+storage/db/
+storage/files/
+*.db
+*.db-wal
+*.db-shm
+
+# Backups, artifacts & logs
+.artifacts/
+.backups/
+*.log
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Raw document corpora (loaded via volume/upload at runtime)
+Luat-DT-QH15/
+demo/
+
+# Editor / OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

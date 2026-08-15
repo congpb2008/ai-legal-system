@@ -1,0 +1,95 @@
+{
+  "contract_version": "1.0",
+
+  "retrieval_id": "RET-2026-000001",
+
+  "query": {
+    "original": "Quy định về đối tượng áp dụng của quy chế mua sắm máy chủ?",
+    "normalized": "doi tuong ap dung quy che mua sam may chu",
+    "language": "vi",
+    "vault_scope": [
+      "legal-common"
+    ]
+  },
+
+  "strategy": {
+    "type": "HYBRID",
+    "keyword_search": true,
+    "semantic_search": true,
+    "reranking": true
+  },
+
+  "summary": {
+    "total_candidates": 42,
+    "retrieved": 5,
+    "latency_ms": 84
+  },
+
+  "evidence": [
+    {
+      "rank": 1,
+
+      "score": 0.982,
+
+      "document": {
+        "document_id": "DOC-2026-000001",
+        "title": "Quyết định về việc ban hành Quy chế mua sắm máy chủ",
+        "document_number": "15/2026/QD-NH",
+        "status": "ACTIVE"
+      },
+
+      "node": {
+        "node_id": "NODE-0006",
+        "type": "ARTICLE",
+        "canonical_reference": "Điều 2",
+        "path": "I.2"
+      },
+
+      "content": "Các đơn vị tham gia mua sắm, thẩm định và phê duyệt.",
+
+      "source": {
+        "page": 3,
+        "start_line": 1,
+        "end_line": 4
+      },
+
+      "match": {
+        "keyword_score": 0.96,
+        "semantic_score": 0.99,
+        "rerank_score": 0.98
+      }
+    },
+
+    {
+      "rank": 2,
+
+      "score": 0.953,
+
+      "document": {
+        "document_id": "DOC-2026-000001",
+        "title": "Quyết định về việc ban hành Quy chế mua sắm máy chủ"
+      },
+
+      "node": {
+        "node_id": "NODE-0007",
+        "type": "POINT",
+        "canonical_reference": "Điều 2 Điểm a",
+        "path": "I.2.a"
+      },
+
+      "content": "Phòng Công nghệ Thông tin.",
+
+      "source": {
+        "page": 3,
+        "start_line": 5,
+        "end_line": 6
+      },
+
+      "match": {
+        "keyword_score": 0.88,
+        "semantic_score": 0.95,
+        "rerank_score": 0.95
+      }
+    }
+  ]
+}

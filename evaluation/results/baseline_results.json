@@ -1,0 +1,1671 @@
+[
+  {
+    "id": "Q01",
+    "category": "DIRECT_FACTUAL",
+    "query": "Luật số 90/2025/QH15 do cơ quan nào ban hành và có hiệu lực từ ngày nào?",
+    "search_latency_ms": 3768.8,
+    "ask_latency_ms": 8827.2,
+    "retrieved_docs": [],
+    "answer": "## Không tìm thấy bằng chứng\n\nKhông có tài liệu nào trong phạm vi truy xuất chứa thông tin liên quan đến câu hỏi của bạn.\n\n**Gợi ý:**\n- Hãy thử tải lên các tài liệu liên quan.\n- Mở rộng phạm vi tìm kiếm.\n- Diễn đạt lại câu hỏi với từ khóa khác.",
+    "citations_count": 0,
+    "citations": []
+  },
+  {
+    "id": "Q02",
+    "category": "DIRECT_FACTUAL",
+    "query": "Nghị định 214/2025/NĐ-CP do cơ quan nào ban hành và quy định về nội dung gì?",
+    "search_latency_ms": 4208.4,
+    "ask_latency_ms": 7670.5,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, dưới đây là thông tin về Nghị định 214/2025/NĐ-CP:\n\n**1. Cơ quan ban hành:**\nNghị định 214/2025/NĐ-CP do **Chính phủ** ban hành ([Nguồn 2], [Nguồn 3]).\n\n**2. Nội dung quy định:**\nNghị định này quy định chi tiết một số điều và biện pháp thi hành **Luật Đấu thầu về lựa chọn nhà thầu** ([Nguồn 2], [Nguồn 3]).\n\nCụ thể, Nghị định cũng phân công trách nhiệm cho các bộ, ngành liên quan trong việc thực hiện Luật Đấu thầu, bao gồm:\n*   **Bộ Tài chính:** Có trách nhiệm quy định chi tiết, hướng dẫn thực hiện; quản lý cơ sở dữ liệu về nhà thầu; ban hành mẫu hồ sơ và chỉnh sửa các tính năng trên Hệ thống mạng đấu thầu quốc gia ([Nguồn 8], Điều 146).\n*   **Bộ Y tế:** Hướng dẫn lựa chọn nhà thầu trong phạm vi quản lý, ban hành mẫu hồ sơ đối với thuốc và hướng dẫn phân nhóm thiết bị y tế ([Nguồn 8], Điều 146).",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "fa480665-5459-4b9c-92ba-6ddc0041ae4d",
+        "document_id": "87a393d6-03df-44a5-af06-8597488ca053",
+        "document_version_id": "69a13e25-ad88-403e-88aa-aa2c6a5f4f93",
+        "knowledge_node_id": "f1b320ac-fc97-4283-9b99-af695cf3c0bb",
+        "evidence_id": "0725255c-589b-4b9e-be70-ef4289a2bd40",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 17,
+          "line_end": 75,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Phụ lục Thông tư 79/2025/TT-BTC – Biểu mẫu phê duyệt và quản lý đấu thầu",
+        "document_tags": [
+          "Phụ lục",
+          "Biểu mẫu",
+          "Phê duyệt",
+          "Quản lý đấu thầu",
+          "Thông tư 79/2025/TT-BTC"
+        ],
+        "source_url": "/api/v1/documents/87a393d6-03df-44a5-af06-8597488ca053/source?node_id=f1b320ac-fc97-4283-9b99-af695cf3c0bb&page=1"
+      },
+      {
+        "id": "706fd664-aa28-476a-9d89-0358c3644498",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "52a9d3a0-9a98-485c-9e6f-1386aade5538",
+        "evidence_id": "2b3170eb-65ca-4165-9d0f-d717980af36a",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 9,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=52a9d3a0-9a98-485c-9e6f-1386aade5538&page=1"
+      },
+      {
+        "id": "afef4bb3-67c3-4745-a194-cc3b603ea98d",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "c1a20d45-5841-4578-a746-b94c8a91c388",
+        "evidence_id": "787c28bd-e696-4f13-99d7-568bd66d259b",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 17,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=c1a20d45-5841-4578-a746-b94c8a91c388&page=1"
+      },
+      {
+        "id": "3f5f696f-8aa1-44b3-926a-ea19bc4d3221",
+        "document_id": "b429166d-a833-4ab7-9736-01f67ab5cbbe",
+        "document_version_id": "fd2ecb1e-400d-4e2b-a3d5-dbea6ae3f8c4",
+        "knowledge_node_id": "73c6b40b-2e5b-4429-8fa0-2862f81a899d",
+        "evidence_id": "e9836f84-d28b-45c9-b996-5b90355f0e83",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 480,
+          "line_end": 756,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Mẫu số 3A – E-HSMT xây lắp, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Xây lắp",
+          "Đấu thầu qua mạng",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/b429166d-a833-4ab7-9736-01f67ab5cbbe/source?node_id=73c6b40b-2e5b-4429-8fa0-2862f81a899d&page=1"
+      },
+      {
+        "id": "cd45bb0d-84be-4a0a-bd62-543e4c82ae60",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "b6a4f331-8bbd-4a91-97ed-65784a60548d",
+        "evidence_id": "a4750182-30d7-4046-be62-30fda72a736d",
+        "source_anchor": {
+          "page": 27,
+          "line_start": 1011,
+          "line_end": 1011,
+          "canonical_reference": "Điều 14"
+        },
+        "label": "Điều 14",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=b6a4f331-8bbd-4a91-97ed-65784a60548d&page=27"
+      },
+      {
+        "id": "36681f9c-f316-499e-adcc-ce6aacfeab63",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "dfb23f52-ecbc-4e83-ab44-715cc15bd0ae",
+        "evidence_id": "5d96172f-6cb0-4561-b5b3-8eb0e11eebf0",
+        "source_anchor": {
+          "page": 18,
+          "line_start": 650,
+          "line_end": 650,
+          "canonical_reference": "Điều 20"
+        },
+        "label": "Điều 20",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=dfb23f52-ecbc-4e83-ab44-715cc15bd0ae&page=18"
+      },
+      {
+        "id": "a33021d3-e4a1-431f-a43b-2515a67ddbee",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "7d1e8f50-269e-48db-91f5-287b5b6ff165",
+        "evidence_id": "d3935053-a938-427d-85ca-b8ecd76ad822",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 242,
+          "line_end": 242,
+          "canonical_reference": "Điều 20"
+        },
+        "label": "Điều 20",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=7d1e8f50-269e-48db-91f5-287b5b6ff165&page=1"
+      },
+      {
+        "id": "3b739aa7-880c-43cb-b589-996580071402",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "bc2e3f58-ac1e-4356-b2f5-1e475b4de28b",
+        "evidence_id": "6212db64-4cbb-447d-9e75-013620faf8b5",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 2158,
+          "line_end": 2158,
+          "canonical_reference": "Điều 146"
+        },
+        "label": "Điều 146",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=bc2e3f58-ac1e-4356-b2f5-1e475b4de28b&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q03",
+    "category": "LEGAL_REFERENCE",
+    "query": "Theo Luật 90/2025/QH15, Luật Đấu thầu số 22/2023/QH15 được sửa đổi, bổ sung tại điều nào?",
+    "search_latency_ms": 3949.4,
+    "ask_latency_ms": 8164.7,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, **không có thông tin cụ thể** về việc Luật Đấu thầu số 22/2023/QH15 được sửa đổi, bổ sung tại *tên một điều luật cụ thể nào khác* (ví dụ: \"được sửa đổi bởi Luật X\").\n\nTuy nhiên, các bằng chứng xác nhận rõ ràng rằng:\n\n1.  **Luật Đấu thầu số 22/2023/QH15** đã được sửa đổi, bổ sung một số điều theo **Luật số 57/2024/QH15** [Nguồn 1], [Nguồn 2], [Nguồn 3].\n2.  Tiếp đó, Luật Đấu thầu số 22/2023/QH15 (đã được sửa đổi bởi Luật 57/2024/QH15) lại tiếp tục được sửa đổi, bổ sung một số điều theo **Luật số 90/2025/QH15** [Nguồn 1], [Nguồn 2], [Nguồn 3].\n\nDo đó, câu trả lời chính xác dựa trên văn bản là: Luật Đấu thầu số 22/2023/QH15 được sửa đổi, bổ sung theo **Luật số 90/2025/QH15** (và trước đó là Luật số 57/2024/QH15).\n\nNếu câu hỏi của bạn muốn biết *điều cụ thể nào trong Luật 90/2025/QH15* quy định việc sửa đổi này, thì các bằng chứng hiện tại **không đủ** để trả lời chi tiết từng điều khoản sửa đổi cụ thể (chỉ nêu chung là \"sửa đổi, bổ sung một số điều\").",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "7c485e86-f5a5-487c-8bdf-53e026fed817",
+        "document_id": "76065fbb-799d-4420-9311-929d1354c564",
+        "document_version_id": "f77fe85a-782e-4be0-b143-e9f4f249d2ee",
+        "knowledge_node_id": "dece2677-f972-493b-af42-d310b87fec49",
+        "evidence_id": "987ad9a5-7c66-4e67-9114-61e7fac04893",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 13,
+          "line_end": 13,
+          "canonical_reference": "Điểm d"
+        },
+        "label": "Điểm d",
+        "document_title": "Ghi chú tham khảo – Một số lưu ý về Luật 90/2025/QH15 sửa đổi Luật Đấu thầu",
+        "document_tags": [
+          "Ghi chú",
+          "Tài liệu tham khảo",
+          "Nội bộ Agribank",
+          "Luật 90/2025/QH15",
+          "Chuyển tiếp"
+        ],
+        "source_url": "/api/v1/documents/76065fbb-799d-4420-9311-929d1354c564/source?node_id=dece2677-f972-493b-af42-d310b87fec49&page=1"
+      },
+      {
+        "id": "27b0691b-d37b-4ea9-a6cc-0d7f468ab270",
+        "document_id": "76065fbb-799d-4420-9311-929d1354c564",
+        "document_version_id": "f77fe85a-782e-4be0-b143-e9f4f249d2ee",
+        "knowledge_node_id": "92d16a3f-271a-4301-9eca-e1349bedf8da",
+        "evidence_id": "6d77d698-69d4-48b7-9e5d-4739fc4ea0b2",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 61,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Ghi chú tham khảo – Một số lưu ý về Luật 90/2025/QH15 sửa đổi Luật Đấu thầu",
+        "document_tags": [
+          "Ghi chú",
+          "Tài liệu tham khảo",
+          "Nội bộ Agribank",
+          "Luật 90/2025/QH15",
+          "Chuyển tiếp"
+        ],
+        "source_url": "/api/v1/documents/76065fbb-799d-4420-9311-929d1354c564/source?node_id=92d16a3f-271a-4301-9eca-e1349bedf8da&page=1"
+      },
+      {
+        "id": "2e78e5b7-495c-4a28-93ac-8cb99f92f43b",
+        "document_id": "4d9b0d9f-3265-4975-a89b-6e3361498104",
+        "document_version_id": "b6b3111b-ddb1-4c9d-bc1d-ac134bd522d6",
+        "knowledge_node_id": "7f85ea09-7105-46cd-b4e8-5a24192201e9",
+        "evidence_id": "b0f2f7e1-9d74-46a1-90e9-e900a8fb4606",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 6,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Luật số 90/2025/QH15 – Sửa đổi, bổ sung một số luật về đấu thầu và đầu tư",
+        "document_tags": [
+          "Luật",
+          "Đấu thầu",
+          "Đầu tư",
+          "PPP",
+          "Quốc hội"
+        ],
+        "source_url": "/api/v1/documents/4d9b0d9f-3265-4975-a89b-6e3361498104/source?node_id=7f85ea09-7105-46cd-b4e8-5a24192201e9&page=1"
+      },
+      {
+        "id": "e0509983-da4b-4236-9275-ec08bd905af8",
+        "document_id": "ecd62246-50b8-42da-beb1-9c88751fa485",
+        "document_version_id": "f9f16975-4fa3-4770-b72f-37d9b03cda56",
+        "knowledge_node_id": "c7db7ff4-98a5-4631-921d-9b828d014bf6",
+        "evidence_id": "aafbf792-a1d7-4d14-a59a-79a7df9bb676",
+        "source_anchor": {
+          "page": 3,
+          "line_start": 86,
+          "line_end": 86,
+          "canonical_reference": "Điều 97"
+        },
+        "label": "Điều 97",
+        "document_title": "Hướng dẫn tổ chức lựa chọn nhà thầu qua mạng từ 01/07/2025 theo Luật 90/2025/QH15",
+        "document_tags": [
+          "Hướng dẫn",
+          "Đấu thầu qua mạng",
+          "Chuyển tiếp",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Luật 90/2025/QH15"
+        ],
+        "source_url": "/api/v1/documents/ecd62246-50b8-42da-beb1-9c88751fa485/source?node_id=c7db7ff4-98a5-4631-921d-9b828d014bf6&page=3"
+      },
+      {
+        "id": "46d34955-3890-44e6-997e-e3445279d2b8",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "6e6aa0b6-1ac9-4901-a519-ec5320b27577",
+        "evidence_id": "5f5f43cd-1f13-4d73-acef-743754724895",
+        "source_anchor": {
+          "page": 180,
+          "line_start": 6722,
+          "line_end": 6722,
+          "canonical_reference": "Điều 145"
+        },
+        "label": "Điều 145",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=6e6aa0b6-1ac9-4901-a519-ec5320b27577&page=180"
+      },
+      {
+        "id": "f6afcaa4-b03d-4635-9595-f3005e299cb6",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "5235da81-1284-4f68-acdb-38f18a219e18",
+        "evidence_id": "9da71967-0b75-4743-a0ea-a86796a1c8fb",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 2150,
+          "line_end": 2150,
+          "canonical_reference": "Điều 145"
+        },
+        "label": "Điều 145",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=5235da81-1284-4f68-acdb-38f18a219e18&page=1"
+      },
+      {
+        "id": "97e9a84d-b3f4-4777-a246-97f24caa167a",
+        "document_id": "ecd62246-50b8-42da-beb1-9c88751fa485",
+        "document_version_id": "f9f16975-4fa3-4770-b72f-37d9b03cda56",
+        "knowledge_node_id": "c7db7ff4-98a5-4631-921d-9b828d014bf6",
+        "evidence_id": "f40ac348-d621-4c37-ba12-4a86c1379acd",
+        "source_anchor": {
+          "page": 3,
+          "line_start": 86,
+          "line_end": 86,
+          "canonical_reference": "Điều 97"
+        },
+        "label": "Điều 97",
+        "document_title": "Hướng dẫn tổ chức lựa chọn nhà thầu qua mạng từ 01/07/2025 theo Luật 90/2025/QH15",
+        "document_tags": [
+          "Hướng dẫn",
+          "Đấu thầu qua mạng",
+          "Chuyển tiếp",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Luật 90/2025/QH15"
+        ],
+        "source_url": "/api/v1/documents/ecd62246-50b8-42da-beb1-9c88751fa485/source?node_id=c7db7ff4-98a5-4631-921d-9b828d014bf6&page=3"
+      },
+      {
+        "id": "869782a5-8031-4a67-941d-54cd5e96e855",
+        "document_id": "4d9b0d9f-3265-4975-a89b-6e3361498104",
+        "document_version_id": "b6b3111b-ddb1-4c9d-bc1d-ac134bd522d6",
+        "knowledge_node_id": "c9848f5e-4bf2-4902-aebf-46828a146615",
+        "evidence_id": "1e081330-f301-42a6-b2b2-a3c4cf8cc128",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 988,
+          "line_end": 988,
+          "canonical_reference": "Điều 10 Khoản 1"
+        },
+        "label": "Điều 10 Khoản 1",
+        "document_title": "Luật số 90/2025/QH15 – Sửa đổi, bổ sung một số luật về đấu thầu và đầu tư",
+        "document_tags": [
+          "Luật",
+          "Đấu thầu",
+          "Đầu tư",
+          "PPP",
+          "Quốc hội"
+        ],
+        "source_url": "/api/v1/documents/4d9b0d9f-3265-4975-a89b-6e3361498104/source?node_id=c9848f5e-4bf2-4902-aebf-46828a146615&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q04",
+    "category": "NUMBERS_DATES",
+    "query": "Thời hạn công khai thông tin kết quả lựa chọn nhà thầu trên Hệ thống mạng đấu thầu quốc gia theo Thông tư 79/2025/TT-BTC là bao nhiêu ngày?",
+    "search_latency_ms": 3838.6,
+    "ask_latency_ms": 7338.5,
+    "retrieved_docs": [],
+    "answer": "Dựa trên **Thông tư 79/2025/TT-BTC**, thời hạn công khai thông tin kết quả lựa chọn nhà thầu trên Hệ thống mạng đấu thầu quốc gia phụ thuộc vào hình thức tổ chức đấu thầu:\n\n1.  **Đối với đấu thầu qua mạng:**\n    *   Không có quy định cụ thể về số ngày chậm nhất. Chủ đầu tư thực hiện việc phê duyệt và đăng tải kết quả lựa chọn nhà thầu trên Hệ thống ngay khi hoàn tất (Điều 20, Khoản 1, Điểm a).\n\n2.  **Đối với đấu thầu không qua mạng:**\n    *   Chủ đầu tư phải đăng tải kết quả lựa chọn nhà thầu trên Hệ thống chậm nhất là **05 ngày làm việc** kể từ ngày phê duyệt kết quả lựa chọn nhà thầu (Điều 20, Khoản 2, Điểm a).\n\n**Căn cứ pháp lý:**\n*   Thông tư 79/2025/TT-BTC, Điều 20. Kết quả lựa chọn nhà thầu.",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "607e4e24-59db-4bdd-bb9a-081154f4fbb9",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "7d1e8f50-269e-48db-91f5-287b5b6ff165",
+        "evidence_id": "401b8322-04e6-4ff3-b745-44f1f7b37a4c",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 242,
+          "line_end": 242,
+          "canonical_reference": "Điều 20"
+        },
+        "label": "Điều 20",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=7d1e8f50-269e-48db-91f5-287b5b6ff165&page=1"
+      },
+      {
+        "id": "8d9bb227-8351-4a9a-9173-76115018750f",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "09e687ba-cbb1-4c38-a494-1d3c79d7e986",
+        "evidence_id": "7f9b4ee8-02f3-415a-8757-241d72a6965f",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 15,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=09e687ba-cbb1-4c38-a494-1d3c79d7e986&page=1"
+      },
+      {
+        "id": "5803168f-c6b7-4065-ad35-d318497835f6",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "dfb23f52-ecbc-4e83-ab44-715cc15bd0ae",
+        "evidence_id": "958ea099-d77a-4ade-a7bd-866050064bff",
+        "source_anchor": {
+          "page": 18,
+          "line_start": 650,
+          "line_end": 650,
+          "canonical_reference": "Điều 20"
+        },
+        "label": "Điều 20",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=dfb23f52-ecbc-4e83-ab44-715cc15bd0ae&page=18"
+      },
+      {
+        "id": "d41db820-615c-410d-8c3f-d05f3a3514dd",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "e5201ddb-79fb-4206-84c4-c54dceb61978",
+        "evidence_id": "d0674148-0e6c-42f2-aea1-53b225ad5d95",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 25,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=e5201ddb-79fb-4206-84c4-c54dceb61978&page=1"
+      },
+      {
+        "id": "cc5639e2-7683-41c8-9869-3418f6b94b96",
+        "document_id": "ecd62246-50b8-42da-beb1-9c88751fa485",
+        "document_version_id": "f9f16975-4fa3-4770-b72f-37d9b03cda56",
+        "knowledge_node_id": "c7db7ff4-98a5-4631-921d-9b828d014bf6",
+        "evidence_id": "ee5d4ee6-865c-43a0-a904-7cd549bdd7e4",
+        "source_anchor": {
+          "page": 3,
+          "line_start": 86,
+          "line_end": 86,
+          "canonical_reference": "Điều 97"
+        },
+        "label": "Điều 97",
+        "document_title": "Hướng dẫn tổ chức lựa chọn nhà thầu qua mạng từ 01/07/2025 theo Luật 90/2025/QH15",
+        "document_tags": [
+          "Hướng dẫn",
+          "Đấu thầu qua mạng",
+          "Chuyển tiếp",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Luật 90/2025/QH15"
+        ],
+        "source_url": "/api/v1/documents/ecd62246-50b8-42da-beb1-9c88751fa485/source?node_id=c7db7ff4-98a5-4631-921d-9b828d014bf6&page=3"
+      },
+      {
+        "id": "8f617018-d50d-4d4c-99b1-86c0b1a73a96",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "b081ff58-1224-4bda-b179-ab514bc9c5d1",
+        "evidence_id": "012ef681-da82-4e90-9f84-f042fce98336",
+        "source_anchor": {
+          "page": 116,
+          "line_start": 4375,
+          "line_end": 4375,
+          "canonical_reference": "Điều 68"
+        },
+        "label": "Điều 68",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=b081ff58-1224-4bda-b179-ab514bc9c5d1&page=116"
+      },
+      {
+        "id": "05972ebb-c3ac-46fd-a8b5-4404c1795592",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "ca0788db-260d-4311-bdaa-f868d5c06f8b",
+        "evidence_id": "67972e80-04c4-4cd5-b1d4-c47365a323af",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 2137,
+          "line_end": 2137,
+          "canonical_reference": "Điều 144 Khoản 5"
+        },
+        "label": "Điều 144 Khoản 5",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=ca0788db-260d-4311-bdaa-f868d5c06f8b&page=1"
+      },
+      {
+        "id": "d2716ed3-64a4-4cf3-8269-b088a96646fe",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "58d09fa7-ed11-4bfd-8fec-2a6d063f9e2d",
+        "evidence_id": "d75b1779-001c-400c-be8a-3734380ff7dd",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 383,
+          "line_end": 383,
+          "canonical_reference": "Điều 35"
+        },
+        "label": "Điều 35",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=58d09fa7-ed11-4bfd-8fec-2a6d063f9e2d&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q05",
+    "category": "SEMANTIC_PARAPHRASE",
+    "query": "Chủ đầu tư cần đăng tải thông báo mời thầu ở đâu và trong thời gian bao lâu?",
+    "search_latency_ms": 3792.0,
+    "ask_latency_ms": 10022.1,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, việc đăng tải thông báo mời thầu của chủ đầu tư phụ thuộc vào hình thức lựa chọn nhà thầu và giá trị gói thầu. Cụ thể như sau:\n\n**1. Địa điểm đăng tải**\nChủ đầu tư phải đăng tải thông báo mời thầu trên **Hệ thống mạng đấu thầu quốc gia** [Nguồn 2, Điểm a; Nguồn 4; Nguồn 6, Điểm a].\n\n**2. Thời hạn đăng tải**\nThời hạn đăng tải được quy định khác nhau tùy theo hình thức và giá trị gói thầu:\n\n*   **Đối với lựa chọn tư vấn cá nhân (theo Điều 75):**\n    *   Chủ đầu tư đăng tải thông báo mời thầu kèm điều khoản tham chiếu sau khi điều khoản tham chiếu được phê duyệt.\n    *   Thời gian tối thiểu để tư vấn cá nhân chuẩn bị hồ sơ lý lịch khoa học là **05 ngày làm việc** [Nguồn 1, Khoản 1; Nguồn 5, Khoản 1].\n\n*   **Đối với chào giá trực tuyến (theo Điều 102):**\n    *   Gói thầu có giá từ **02 tỷ đồng đến 05 tỷ đồng**: Tối thiểu **05 ngày làm việc** trước ngày có thời điểm bắt đầu chào giá trực tuyến [Nguồn 4, Khoản 2; Nguồn 7].\n    *   Gói thầu có giá **dưới 02 tỷ đồng**: Tối thiểu **03 ngày làm việc** trước ngày có thời điểm bắt đầu chào giá trực tuyến [Nguồn 4, Khoản 2; Nguồn 7].\n\n*   **Đối với đấu thầu rộng rãi thông thường (theo Điều 28):**\n    *   Thời gian chuẩn bị hồ sơ dự thầu tối thiểu là **18 ngày làm việc** đối với đấu thầu trong nước và **35 ngày làm việc** đối với đấu thầu quốc tế [Nguồn 6, Điểm a].\n    *   *Lưu ý:* Đối với gói thầu xây lắp/hỗn hợp có giá không quá 20 tỷ đồng, hoặc mua sắm hàng hóa/dịch vụ phi tư vấn có giá không quá 10 tỷ đồng, thời gian chuẩn bị hồ sơ dự thầu tối thiểu là **09 ngày làm việc** (trong nước) và **18 ngày làm việc** (quốc tế) [Nguồn 6, Điểm a].\n\n**Tóm lại:**\n*   **Nơi đăng tải:** Hệ thống mạng đấu thầu quốc gia.\n*   **Thời hạn:** Tùy thuộc vào hình thức (tư vấn cá nhân: 05 ngày làm việc; chào giá trực tuyến: 03-05 ngày làm việc tùy giá trị; đấu thầu rộng rãi: 18-35 ngày hoặc 9-18 ngày tùy loại gói thầu và phạm vi).",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "0698de32-ed6f-48b8-902c-dc93d4ad1a54",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "da9d44b9-adaf-45bd-90e0-b4fb9a13e3c4",
+        "evidence_id": "f59d253c-ae2b-44b6-acce-62b31ddaed9a",
+        "source_anchor": {
+          "page": 84,
+          "line_start": 3144,
+          "line_end": 3144,
+          "canonical_reference": "Điều 75"
+        },
+        "label": "Điều 75",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=da9d44b9-adaf-45bd-90e0-b4fb9a13e3c4&page=84"
+      },
+      {
+        "id": "fa803457-6761-46bd-a2d3-2e47c55ea093",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "01ab6644-a571-4208-9d3d-a92176a56d07",
+        "evidence_id": "db39c88a-527b-413f-a090-fba83b90c869",
+        "source_anchor": {
+          "page": 94,
+          "line_start": 3539,
+          "line_end": 3539,
+          "canonical_reference": "Khoản 2"
+        },
+        "label": "Khoản 2",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=01ab6644-a571-4208-9d3d-a92176a56d07&page=94"
+      },
+      {
+        "id": "e19bc5b1-38c7-42c4-ab86-7ecf6cb117d1",
+        "document_id": "5d33cd07-7bca-4247-b687-ebd0f8c8d760",
+        "document_version_id": "6faf9be5-09ba-44fd-bf56-ab43c51a93e3",
+        "knowledge_node_id": "2b133f9c-b69a-4ea0-90d2-7ba7b4bb22eb",
+        "evidence_id": "52767dfd-394c-4844-b7c1-e09ebda5b242",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 62,
+          "line_end": 434,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 9A – E-HSMT gói thầu PC, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "PC",
+          "Hàng hóa xây lắp",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/5d33cd07-7bca-4247-b687-ebd0f8c8d760/source?node_id=2b133f9c-b69a-4ea0-90d2-7ba7b4bb22eb&page=1"
+      },
+      {
+        "id": "2fc9ddec-f1b6-4f48-a7ab-73c795e92e3c",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "45c3dc80-fd97-4643-80d4-897c43fa7f09",
+        "evidence_id": "f001b299-94df-440a-86ef-585829680c49",
+        "source_anchor": {
+          "page": 121,
+          "line_start": 4566,
+          "line_end": 4566,
+          "canonical_reference": "Điều 102 Khoản 2"
+        },
+        "label": "Điều 102 Khoản 2",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=45c3dc80-fd97-4643-80d4-897c43fa7f09&page=121"
+      },
+      {
+        "id": "6222669e-4413-4874-a1c9-2407cfff8b21",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "21a5dd62-7e96-4c4c-bf2a-e43debb24486",
+        "evidence_id": "ca0f0023-b537-4eac-a129-6a83fadf56fb",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1046,
+          "line_end": 1046,
+          "canonical_reference": "Điều 75"
+        },
+        "label": "Điều 75",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=21a5dd62-7e96-4c4c-bf2a-e43debb24486&page=1"
+      },
+      {
+        "id": "63608ce7-9e0c-48d7-8305-4faf23cdf1d3",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "a1a5a696-0b8a-4e44-8e00-e1dc7276d400",
+        "evidence_id": "8648aab9-2f36-4308-b744-48b07abc5847",
+        "source_anchor": {
+          "page": 41,
+          "line_start": 1565,
+          "line_end": 1565,
+          "canonical_reference": "Điều 28 Khoản 2"
+        },
+        "label": "Điều 28 Khoản 2",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=a1a5a696-0b8a-4e44-8e00-e1dc7276d400&page=41"
+      },
+      {
+        "id": "1ca9fd1f-e488-4bf7-8765-6f3ade403531",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "2c3e4345-bf28-4c16-ac27-216f25feb86e",
+        "evidence_id": "1343c1f0-4fea-4247-ae32-eb675c91b6ec",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1466,
+          "line_end": 1466,
+          "canonical_reference": "Điều 102 Khoản 2"
+        },
+        "label": "Điều 102 Khoản 2",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=2c3e4345-bf28-4c16-ac27-216f25feb86e&page=1"
+      },
+      {
+        "id": "25a85fe1-10c9-4596-b335-26e78abbb98d",
+        "document_id": "9dc38d0a-bf86-4eb7-b116-14cfc0a8ba43",
+        "document_version_id": "024049bf-45b6-44ab-b6de-c52a6008d8bf",
+        "knowledge_node_id": "c86517c0-8f9a-4362-8903-8c94c6d4c74e",
+        "evidence_id": "83d5bac4-ff91-43c6-8905-25ba8d498a05",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 67,
+          "line_end": 387,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 12B – E-HSMT chào giá trực tuyến dịch vụ phi tư vấn, quy trình thông thường",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Chào giá trực tuyến",
+          "Phi tư vấn",
+          "Quy trình thông thường"
+        ],
+        "source_url": "/api/v1/documents/9dc38d0a-bf86-4eb7-b116-14cfc0a8ba43/source?node_id=c86517c0-8f9a-4362-8903-8c94c6d4c74e&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q06",
+    "category": "TERMINOLOGY_VARIATION",
+    "query": "Khi làm hồ sơ mời thầu mua sắm máy móc thiết bị thông thường qua mạng 1 túi hồ sơ thì dùng mẫu biểu nào?",
+    "search_latency_ms": 3658.1,
+    "ask_latency_ms": 11639.9,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, câu trả lời cho câu hỏi của bạn như sau:\n\n**Không có đủ thông tin để xác định chính xác mẫu biểu duy nhất**, vì thuật ngữ \"máy móc thiết bị\" trong câu hỏi không khớp trực tiếp với các phân loại gói thầu cụ thể được quy định rõ ràng trong Thông tư 79/2025/TT-BTC. Tuy nhiên, dựa trên ngữ cảnh pháp lý hiện hành, có hai khả năng chính:\n\n### 1. Trường hợp là \"Gói thầu máy đặt, máy mượn\"\nNếu \"máy móc thiết bị\" được hiểu theo đúng nghĩa pháp lý của Luật Đấu thầu (cung cấp thiết bị y tế, hóa chất, vật tư xét nghiệm và các dịch vụ đi kèm để vận hành thiết bị y tế không bao gồm nhân công vận hành), thì đây là **gói thầu máy đặt, máy mượn**.\n\n*   **Mẫu biểu sử dụng:** **Mẫu số 11A** (Hồ sơ mời thầu máy đặt, máy mượn qua mạng một giai đoạn một túi hồ sơ).\n*   **Căn cứ:** [Nguồn 5] quy định rõ \"MẪU SỐ 11A HỒ SƠ MỜI THẦU MÁY ĐẶT, MÁY MƯỢN QUA MẠNG MỘT GIAI ĐOẠN MỘT TÚI HỒ SƠ\".\n*   **Phạm vi điều chỉnh:** [Nguồn 6] và [Nguồn 7] xác định \"gói thầu máy đặt, máy mượn\" là một loại gói thầu riêng biệt nằm trong phạm vi điều chỉnh của Thông tư này.\n\n### 2. Trường hợp là \"Mua sắm hàng hóa\" thông thường\nNếu \"máy móc thiết bị\" chỉ là thiết bị văn phòng, công nghệ thông tin hoặc hàng hóa thông thường (không thuộc nhóm thiết bị y tế/hóa chất đặc thù nêu trên), thì nó được xếp vào nhóm **hàng hóa**.\n\n*   **Mẫu biểu sử dụng:** **Mẫu số 12A** (Hồ sơ mời thầu mua sắm hàng hóa qua mạng một giai đoạn một túi hồ sơ áp dụng hình thức chào giá trực tuyến theo quy trình thông thường).\n*   **Căn cứ:** [Nguồn 2] và [Nguồn 3] quy định: \"Điểm a: Mẫu số 12A được sử dụng để lập hồ sơ mời thầu mua sắm hàng hóa qua mạng một giai đoạn một túi hồ sơ áp dụng hình thức chào giá trực tuyến theo quy trình thông thường\".\n*   **Lưu ý:** Nếu không áp dụng hình thức chào giá trực tuyến mà là đấu thầu rộng hạn chế hoặc một giai đoạn hai túi hồ sơ, thì sẽ sử dụng các mẫu khác (như Mẫu 14A cho báo cáo đánh giá, nhưng câu hỏi hỏi về *hồ sơ mời thầu*). Tuy nhiên, [Nguồn 8] chỉ cung cấp chi tiết cho hình thức \"chào giá trực tuyến\".\n\n### Kết luận và Khuyến nghị\nĐể chọn đúng mẫu biểu, bạn cần xác định rõ loại gói thầu:\n\n1.  Nếu là **thiết bị y tế/hóa chất/vật tư xét nghiệm** (có dịch vụ vận hành đi kèm): Dùng **Mẫu số 11A**.\n2.  Nếu là **hàng hóa thông thường** (máy móc, thiết bị văn phòng, CNTT...):\n    *   Nếu áp dụng hình thức **chào giá trực tuyến**: Dùng **Mẫu số 12A**.\n    *   Nếu áp dụng hình thức khác (đấu thầu rộng rãi/hạn chế một giai đoạn một túi hồ sơ): Thông tư 79/2025/TT-BTC quy định chung về việc sử dụng các mẫu hồ sơ đấu thầu trên Hệ thống mạng đấu thầu quốc gia ([Nguồn 6], [Nguồn 7]), nhưng chi tiết cụ thể cho \"hồ sơ mời thầu\" (không phải báo cáo đánh giá) của hàng hóa thông thường theo phương thức *không* phải chào giá trực tuyến không được trích xuất đầy đủ trong các nguồn cung cấp (chỉ có Mẫu 14A là báo cáo đánh giá).\n\n**Tóm lại:**\n*   Với cụm từ \"máy móc thiết bị\" thường được hiểu là **hàng hóa**, mẫu phổ biến nhất cho quy trình thông thường qua mạng hiện nay là **Mẫu số 12A** (nếu dùng chào giá trực tuyến) hoặc cần tham khảo thêm các mẫu hồ sơ mời thầu hàng hóa khác không nằm trong đoạn trích này.\n*   Nếu đúng là **gói thầu máy đặt/máy mượn** theo định nghĩa pháp lý, thì là **Mẫu số 11A**.\n\n*Lưu ý: Thông tin này dựa trên Thông tư 79/2025/TT-BTC ngày 04 tháng 8 năm 2025. Người dùng cần đối chiếu với tính chất cụ thể của gói thầu để chọn mẫu phù hợp.*",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "1039d1ac-ca8e-47e4-9a12-648caa931f26",
+        "document_id": "27191e95-b094-4651-9955-140f924dacde",
+        "document_version_id": "5c71e6a2-9699-4d0a-8f2e-8686d073f67a",
+        "knowledge_node_id": "e053081a-1c66-46ee-8443-bfd11234be54",
+        "evidence_id": "c22d934c-5686-46ad-a591-a623f9ce550b",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 577,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Mẫu số 14A – Báo cáo đánh giá E-HSDT, quy trình 01, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "Báo cáo đánh giá",
+          "E-HSDT",
+          "Quy trình 01",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/27191e95-b094-4651-9955-140f924dacde/source?node_id=e053081a-1c66-46ee-8443-bfd11234be54&page=1"
+      },
+      {
+        "id": "645d8da7-6259-466d-b8e6-d5ec7dbbbb7f",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "c8fdafba-ef96-4d16-8266-816d25d9fe8e",
+        "evidence_id": "ffb3a2c9-93ec-4556-af1d-207830f37581",
+        "source_anchor": {
+          "page": 7,
+          "line_start": 252,
+          "line_end": 252,
+          "canonical_reference": "Điều 4 Khoản 12"
+        },
+        "label": "Điều 4 Khoản 12",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=c8fdafba-ef96-4d16-8266-816d25d9fe8e&page=7"
+      },
+      {
+        "id": "b2a6ecd3-acb5-4653-8b1b-f788d127363b",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "7aa8eff3-cd48-44f9-950b-81f4f6e8bf65",
+        "evidence_id": "29b0ab02-8899-47ed-ae02-5d235f3a1dc9",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 118,
+          "line_end": 118,
+          "canonical_reference": "Điều 4 Khoản 12"
+        },
+        "label": "Điều 4 Khoản 12",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=7aa8eff3-cd48-44f9-950b-81f4f6e8bf65&page=1"
+      },
+      {
+        "id": "3aa20dbe-64c7-4ce2-b6fb-c8ed27737b45",
+        "document_id": "887567d2-65c7-4116-8411-8a9a1d7c3305",
+        "document_version_id": "c6943760-7f8b-407f-988b-2a6bbc2c7fdb",
+        "knowledge_node_id": "40ad526d-acf9-4612-9e5c-bbdd90ad7669",
+        "evidence_id": "cbbf5e6f-cf5b-41b8-a2dd-3f17aa00d46d",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 739,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Mẫu số 14C – Báo cáo đánh giá E-HSDT, một giai đoạn hai túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "Báo cáo đánh giá",
+          "E-HSDT",
+          "Một giai đoạn hai túi hồ sơ",
+          "Hàng hóa xây lắp phi tư vấn"
+        ],
+        "source_url": "/api/v1/documents/887567d2-65c7-4116-8411-8a9a1d7c3305/source?node_id=40ad526d-acf9-4612-9e5c-bbdd90ad7669&page=1"
+      },
+      {
+        "id": "72028609-8cdb-4f05-89dc-c72ed03a6100",
+        "document_id": "13a4ca07-c2ad-4a64-9d05-b49d5e506bd9",
+        "document_version_id": "6d66a556-5459-40a7-a9d9-c1576632e766",
+        "knowledge_node_id": "712bb02c-3d38-4883-aa3f-82b4fa957bd3",
+        "evidence_id": "5f133bc7-0c9d-4e9e-82c2-addd5607ed76",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 18,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Mẫu số 11A – E-HSMT gói thầu máy đặt, máy mượn, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Máy đặt máy mượn",
+          "Thiết bị y tế",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/13a4ca07-c2ad-4a64-9d05-b49d5e506bd9/source?node_id=712bb02c-3d38-4883-aa3f-82b4fa957bd3&page=1"
+      },
+      {
+        "id": "42ce7506-dee5-4776-b6d1-9171bd30180c",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "1cec06e3-41f6-4a15-a0b6-1480083896d5",
+        "evidence_id": "6735123c-7d9a-4661-9594-024106d80172",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 27,
+          "line_end": 27,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=1cec06e3-41f6-4a15-a0b6-1480083896d5&page=1"
+      },
+      {
+        "id": "b2ba1f1a-d60b-4dd8-b5bd-71ad325b4082",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "1e10df58-9f80-43f9-92d6-2b6f2a55c8b2",
+        "evidence_id": "aaa301a7-ef1e-4d82-8928-e0301989c9a3",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 17,
+          "line_end": 17,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=1e10df58-9f80-43f9-92d6-2b6f2a55c8b2&page=1"
+      },
+      {
+        "id": "71c6e5de-2431-4f4d-8ef7-88a4abc78ea6",
+        "document_id": "d2be1029-1140-419b-b046-00c651b720d6",
+        "document_version_id": "f3a3f3ed-befe-4f4a-bc6e-b33b9807c7dd",
+        "knowledge_node_id": "1ba846da-7bab-4af0-a185-fad212b03d1c",
+        "evidence_id": "658489b6-7fc1-403f-8591-44d12b930133",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 20,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Mẫu số 12A – E-HSMT chào giá trực tuyến hàng hóa, quy trình thông thường",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Chào giá trực tuyến",
+          "Hàng hóa",
+          "Quy trình thông thường"
+        ],
+        "source_url": "/api/v1/documents/d2be1029-1140-419b-b046-00c651b720d6/source?node_id=1ba846da-7bab-4af0-a185-fad212b03d1c&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q07",
+    "category": "TERMINOLOGY_VARIATION",
+    "query": "Gói thầu bảo vệ, vệ sinh văn phòng một giai đoạn một túi hồ sơ áp dụng mẫu E-HSMT nào?",
+    "search_latency_ms": 3844.3,
+    "ask_latency_ms": 10433.6,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, **không thể xác định chính xác** mẫu E-HSMT cụ thể cho gói thầu \"bảo vệ, vệ sinh văn phòng\" vì thiếu thông tin phân loại rõ ràng giữa \"dịch vụ phi tư vấn\" và \"dịch vụ khác\". Tuy nhiên, có thể suy luận dựa trên quy định hiện hành như sau:\n\n### 1. Phân loại gói thầu\nGói thầu \"bảo vệ, vệ sinh văn phòng\" thuộc nhóm **gói thầu dịch vụ** (không phải hàng hóa hay xây lắp). Trong hệ thống đấu thầu điện tử Việt Nam, các gói thầu dịch vụ thường được phân thành hai nhóm chính để áp dụng mẫu:\n*   **Dịch vụ tư vấn:** Áp dụng Mẫu số 1A/1B (một giai đoạn một/two túi) hoặc Mẫu số 2A/2B.\n*   **Dịch vụ phi tư vấn:** Áp dụng Mẫu số 5A/5B.\n\n### 2. Cơ sở pháp lý từ bằng chứng\n*   **[Nguồn 5] và [Nguồn 6]** (Thông tư 79/2025/TT-BTC) quy định rõ:\n    *   **Mẫu số 5A**: Được sử dụng để lập E-HSMT áp dụng hình thức đấu thầu rộng rãi, đấu thầu hạn chế, chào hàng cạnh tranh theo phương thức **một giai đoạn một túi hồ sơ** đối với gói thầu **dịch vụ phi tư vấn**.\n    *   **Mẫu số 5B**: Áp dụng cho phương thức hai túi hồ sơ.\n\n### 3. Kết luận và Lưu ý quan trọng\n*   Nếu gói thầu \"bảo vệ, vệ sinh văn phòng\" được xác định là **dịch vụ phi tư vấn** (đây là phân loại phổ biến nhất đối với dịch vụ hỗ trợ này), thì áp dụng **Mẫu số 5A**.\n*   Tuy nhiên, nếu gói thầu này được xem xét dưới góc độ mua sắm hàng hóa/dịch vụ hỗn hợp hoặc có yếu tố kỹ thuật đặc thù khác, chủ đầu tư cần tham chiếu thêm vào hướng dẫn cụ thể của cơ quan quản lý nhà nước về đấu thầu (Bộ Kế hoạch và Đầu tư) để đảm bảo không nhầm lẫn với các mẫu dịch vụ tư vấn.\n*   Các bằng chứng **[Nguồn 1], [Nguồn 2], [Nguồn 3], [Nguồn 4], [Nguồn 7]** đều đề cập đến **Mẫu số 11** (cho gói thầu máy đặt/mượn) và **Mẫu số 4** (cho mua sắm hàng hóa), nên không áp dụng cho gói thầu dịch vụ này.\n\n**Tóm lại:**\nDựa trên Thông tư 79/2025/TT-BTC, nếu gói thầu bảo vệ, vệ sinh văn phòng được phân loại là **dịch vụ phi tư vấn**, thì áp dụng **Mẫu số 5A – E-HSMT dịch vụ phi tư vấn, một giai đoạn một túi hồ sơ**.\n\n*Lưu ý: Để chắc chắn 100%, chủ đầu tư cần xác nhận lại tính chất \"phi tư vấn\" của gói thầu trong hồ sơ mời thầu hoặc tham khảo văn bản hướng dẫn chi tiết của cơ quan có thẩm quyền về phân loại dịch vụ hỗ trợ.*",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "3c4c050c-264f-4a3e-8220-bb314b9ddffb",
+        "document_id": "0b75a592-5b00-4b38-91f7-05e0f364c994",
+        "document_version_id": "d8a79781-be75-465b-8aab-5b728d804f21",
+        "knowledge_node_id": "1362affc-639f-4ef4-968a-b8f804f2ddbf",
+        "evidence_id": "4297d000-b9dc-4b6a-be76-7ecfd90985b4",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 72,
+          "line_end": 458,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 11B – E-HSMT gói thầu máy đặt, máy mượn, một giai đoạn hai túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Máy đặt máy mượn",
+          "Thiết bị y tế",
+          "Một giai đoạn hai túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/0b75a592-5b00-4b38-91f7-05e0f364c994/source?node_id=1362affc-639f-4ef4-968a-b8f804f2ddbf&page=1"
+      },
+      {
+        "id": "dee1d215-9fcc-4a52-8bfa-0377a74ddefd",
+        "document_id": "13a4ca07-c2ad-4a64-9d05-b49d5e506bd9",
+        "document_version_id": "6d66a556-5459-40a7-a9d9-c1576632e766",
+        "knowledge_node_id": "1a3dcf3b-74b5-4f6e-b23a-4ee990fb744c",
+        "evidence_id": "9543e4f8-242b-407e-aca0-3c51e7a4dd15",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 72,
+          "line_end": 423,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 11A – E-HSMT gói thầu máy đặt, máy mượn, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Máy đặt máy mượn",
+          "Thiết bị y tế",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/13a4ca07-c2ad-4a64-9d05-b49d5e506bd9/source?node_id=1a3dcf3b-74b5-4f6e-b23a-4ee990fb744c&page=1"
+      },
+      {
+        "id": "29fe537f-7a86-4c37-aada-26ecf7fd3641",
+        "document_id": "773dc44c-54f8-43fb-94b4-2c3bbae5e4c7",
+        "document_version_id": "89b75307-6370-43ea-8f5e-facb766611f4",
+        "knowledge_node_id": "b16310ae-0329-4665-9b9d-892e637230cd",
+        "evidence_id": "37d0da79-4fc7-475e-b640-be7ca7634d5c",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 72,
+          "line_end": 479,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 4B – E-HSMT mua sắm hàng hóa, một giai đoạn hai túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Hàng hóa",
+          "Đấu thầu qua mạng",
+          "Một giai đoạn hai túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/773dc44c-54f8-43fb-94b4-2c3bbae5e4c7/source?node_id=b16310ae-0329-4665-9b9d-892e637230cd&page=1"
+      },
+      {
+        "id": "1b5412c8-d84f-4f0b-bff4-169a78e52fe8",
+        "document_id": "e3e67726-d8a4-461a-b5f3-5e9a3eca5f1a",
+        "document_version_id": "e33f050f-909a-446a-b9d9-a29911c04492",
+        "knowledge_node_id": "779801e8-9ed0-4c0a-b27d-26704323f9b6",
+        "evidence_id": "0dcfdf0d-4b0a-4e1c-bf69-9e28ef914167",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 68,
+          "line_end": 424,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 4A – E-HSMT mua sắm hàng hóa, một giai đoạn một túi hồ sơ (Thông tư 22/2024/TT-BKHĐT)",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Hàng hóa",
+          "Một giai đoạn một túi hồ sơ",
+          "Thông tư 22/2024/TT-BKHĐT"
+        ],
+        "source_url": "/api/v1/documents/e3e67726-d8a4-461a-b5f3-5e9a3eca5f1a/source?node_id=779801e8-9ed0-4c0a-b27d-26704323f9b6&page=1"
+      },
+      {
+        "id": "2fc1c0c7-6714-4db5-a182-37caccacfe0f",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "36ec56ab-ea6b-4dfe-b4f4-6a1b81c931a3",
+        "evidence_id": "0e639676-fd0b-4d82-9c5e-be044b8b80a7",
+        "source_anchor": {
+          "page": 6,
+          "line_start": 197,
+          "line_end": 197,
+          "canonical_reference": "Điều 4 Khoản 5"
+        },
+        "label": "Điều 4 Khoản 5",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=36ec56ab-ea6b-4dfe-b4f4-6a1b81c931a3&page=6"
+      },
+      {
+        "id": "e23d6bc8-8a7d-4464-bfd4-ce911c70bc64",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "9aeb067e-ecf5-4bf3-8229-f6b3a59dbe3f",
+        "evidence_id": "c813c020-379f-4692-8e57-53fb55104a4f",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 90,
+          "line_end": 90,
+          "canonical_reference": "Điều 4 Khoản 5"
+        },
+        "label": "Điều 4 Khoản 5",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=9aeb067e-ecf5-4bf3-8229-f6b3a59dbe3f&page=1"
+      },
+      {
+        "id": "b8fdf9ea-030b-49b8-88c8-f36ecf50a549",
+        "document_id": "f9b343bd-4c39-40e4-8d5c-dc457295da1b",
+        "document_version_id": "bd831898-b331-438a-851c-c7feaf1f46af",
+        "knowledge_node_id": "6e2b31aa-970c-42ff-bb05-b6d1b05ce506",
+        "evidence_id": "0f3647f0-9d7a-4b96-9619-9f3ba063c130",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 72,
+          "line_end": 441,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 4A – E-HSMT mua sắm hàng hóa qua mạng, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Hàng hóa",
+          "Đấu thầu qua mạng",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/f9b343bd-4c39-40e4-8d5c-dc457295da1b/source?node_id=6e2b31aa-970c-42ff-bb05-b6d1b05ce506&page=1"
+      },
+      {
+        "id": "5dd11932-2a59-47d8-a613-f4b396b8b2ea",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "442f4201-86d8-450c-b063-f2e73c7a82ff",
+        "evidence_id": "c792952d-68ea-4171-96a8-57cb1f9fdaf1",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 82,
+          "line_end": 82,
+          "canonical_reference": "Điều 4 Khoản 3"
+        },
+        "label": "Điều 4 Khoản 3",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=442f4201-86d8-450c-b063-f2e73c7a82ff&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q08",
+    "category": "MULTI_DOCUMENT",
+    "query": "Sự khác biệt cơ bản giữa phạm vi áp dụng của Mẫu 4A và Mẫu 5A theo Thông tư 79/2025/TT-BTC là gì?",
+    "search_latency_ms": 3599.9,
+    "ask_latency_ms": 6855.6,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, **không thể trả lời** câu hỏi về sự khác biệt cơ bản giữa phạm vi áp dụng của Mẫu 4A và Mẫu 5A.\n\nLý do:\n1.  Các văn bản được trích dẫn trong bằng chứng là **Thông tư 79/2025/TT-BTC** và **Thông tư 80/2025/TT-BTC**.\n2.  Nội dung các điều khoản được cung cấp (Điều 35 của Thông tư 79 và Điều 6 của Thông tư 80) chủ yếu đề cập đến **hiệu lực thi hành**, việc bãi bỏ các thông tư cũ, quy trình chỉnh sửa hồ sơ mời thầu, tiêu chuẩn đánh giá điểm giá và cơ chế bảo mật thông tin.\n3.  Trong đoạn trích nội dung của hai văn bản trên **không hề đề cập** đến \"Mẫu 4A\" hay \"Mẫu 5A\", cũng như không có thông tin nào so sánh phạm vi áp dụng giữa hai mẫu này.\n\nDo đó, dựa trên nguồn bằng chứng hiện có, thông tin yêu cầu là không đủ để trả lời.",
+    "citations_count": 3,
+    "citations": [
+      {
+        "id": "fe7edf5b-f8c8-4b47-bf6a-fd9dbd495dcf",
+        "document_id": "f34136c3-8560-4c97-9021-ce42b6349ce5",
+        "document_version_id": "8d7fb200-74b0-4b49-af17-5caa9dc78163",
+        "knowledge_node_id": "01baaa7c-48e2-498f-a5ef-0e77b8b05db5",
+        "evidence_id": "426efb70-85a1-4a8d-97de-401ae9321e66",
+        "source_anchor": {
+          "page": 29,
+          "line_start": 1088,
+          "line_end": 1088,
+          "canonical_reference": "Điều 35"
+        },
+        "label": "Điều 35",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu (bản PDF)",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/f34136c3-8560-4c97-9021-ce42b6349ce5/source?node_id=01baaa7c-48e2-498f-a5ef-0e77b8b05db5&page=29"
+      },
+      {
+        "id": "46bfb9cd-24a2-47ea-850a-5821b3cc8e21",
+        "document_id": "3b97158e-4193-4af6-aeee-aa37dcb3b927",
+        "document_version_id": "63829577-501a-4a80-b931-aa18c35e1640",
+        "knowledge_node_id": "9a93d35b-2b38-4fae-8033-bedc1b8c8254",
+        "evidence_id": "1afd9da8-d468-474d-9b15-12df5f130c15",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 74,
+          "line_end": 74,
+          "canonical_reference": "Điều 6"
+        },
+        "label": "Điều 6",
+        "document_title": "Thông tư 80/2025/TT-BTC – Mẫu hồ sơ yêu cầu, báo cáo đánh giá, thẩm định và kiểm tra đấu thầu",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu",
+          "Hồ sơ yêu cầu",
+          "Báo cáo đánh giá",
+          "Thẩm định",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/3b97158e-4193-4af6-aeee-aa37dcb3b927/source?node_id=9a93d35b-2b38-4fae-8033-bedc1b8c8254&page=1"
+      },
+      {
+        "id": "610b02b4-0db3-4326-9dbc-d818886ae3d5",
+        "document_id": "10a1658b-b03b-4038-bd6b-025541e33180",
+        "document_version_id": "bf2b83e2-3a2f-4a73-8e22-e70fdc6853b1",
+        "knowledge_node_id": "58d09fa7-ed11-4bfd-8fec-2a6d063f9e2d",
+        "evidence_id": "503f4a60-b91e-40b3-ade5-5d2137ef4d71",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 383,
+          "line_end": 383,
+          "canonical_reference": "Điều 35"
+        },
+        "label": "Điều 35",
+        "document_title": "Thông tư 79/2025/TT-BTC – Cung cấp, đăng tải thông tin và mẫu hồ sơ đấu thầu trên Hệ thống",
+        "document_tags": [
+          "Thông tư",
+          "Đấu thầu qua mạng",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Mẫu hồ sơ",
+          "Bộ Tài chính"
+        ],
+        "source_url": "/api/v1/documents/10a1658b-b03b-4038-bd6b-025541e33180/source?node_id=58d09fa7-ed11-4bfd-8fec-2a6d063f9e2d&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q09",
+    "category": "NEGATIVE_INSUFFICIENT",
+    "query": "Mức phạt tù tối đa đối với hành vi vi phạm quy định về đấu thầu gây hậu quả nghiêm trọng theo Luật 90/2025/QH15 là bao nhiêu năm?",
+    "search_latency_ms": 3768.4,
+    "ask_latency_ms": 8757.9,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng được cung cấp, **không thể xác định** mức phạt tù tối đa đối với hành vi vi phạm quy định về đấu thầu gây hậu quả nghiêm trọng từ Luật 90/2025/QH15 hoặc các văn bản đi kèm.\n\nLý do:\n1.  **[Nguồn 3] và [Nguồn 4]** (Nghị định 214/2025/NĐ-CP, Điều 133) quy định về biện pháp xử phạt hành chính là **cấm tham gia hoạt động đấu thầu** (từ 6 tháng đến tối đa 05 năm tùy theo mức độ vi phạm), nhưng không đề cập đến khung hình sự hay mức phạt tù.\n2.  **[Nguồn 7] và [Nguồn 8]** (Nghị định 214/2025/NĐ-CP, Điều 140 Khoản 25) có nhắc đến trường hợp nhân sự của nhà thầu \"bị Tòa án kết án có hành vi vi phạm quy định về đấu thầu gây hậu quả nghiêm trọng theo quy định pháp luật về hình sự\", nhưng văn bản này chỉ nêu hậu quả trong lĩnh vực đấu thầu (chấm dứt hợp đồng, tịch thu bảo lãnh) mà **không nêu rõ mức phạt tù cụ thể** nào.\n3.  Các nguồn còn lại ([Nguồn 1], [Nguồn 2], [Nguồn 5], [Nguồn 6]) là các ghi chú tham khảo, nội dung luật hoặc quy trình kỹ thuật, không chứa điều khoản về khung hình sự.\n\nDo đó, thông tin về mức phạt tù cụ thể không có trong các tài liệu được cung cấp.",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "5e154057-cc32-4f78-9b4a-6bee51999584",
+        "document_id": "76065fbb-799d-4420-9311-929d1354c564",
+        "document_version_id": "f77fe85a-782e-4be0-b143-e9f4f249d2ee",
+        "knowledge_node_id": "92d16a3f-271a-4301-9eca-e1349bedf8da",
+        "evidence_id": "80229413-5ad1-4f44-a583-03aa09731a35",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 61,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Ghi chú tham khảo – Một số lưu ý về Luật 90/2025/QH15 sửa đổi Luật Đấu thầu",
+        "document_tags": [
+          "Ghi chú",
+          "Tài liệu tham khảo",
+          "Nội bộ Agribank",
+          "Luật 90/2025/QH15",
+          "Chuyển tiếp"
+        ],
+        "source_url": "/api/v1/documents/76065fbb-799d-4420-9311-929d1354c564/source?node_id=92d16a3f-271a-4301-9eca-e1349bedf8da&page=1"
+      },
+      {
+        "id": "6a1038b1-8891-42c6-8051-84180fce831a",
+        "document_id": "4d9b0d9f-3265-4975-a89b-6e3361498104",
+        "document_version_id": "b6b3111b-ddb1-4c9d-bc1d-ac134bd522d6",
+        "knowledge_node_id": "7f85ea09-7105-46cd-b4e8-5a24192201e9",
+        "evidence_id": "05480982-299a-4dae-b65f-c69abe67d458",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1,
+          "line_end": 6,
+          "canonical_reference": "Khoản"
+        },
+        "label": "Khoản",
+        "document_title": "Luật số 90/2025/QH15 – Sửa đổi, bổ sung một số luật về đấu thầu và đầu tư",
+        "document_tags": [
+          "Luật",
+          "Đấu thầu",
+          "Đầu tư",
+          "PPP",
+          "Quốc hội"
+        ],
+        "source_url": "/api/v1/documents/4d9b0d9f-3265-4975-a89b-6e3361498104/source?node_id=7f85ea09-7105-46cd-b4e8-5a24192201e9&page=1"
+      },
+      {
+        "id": "d6665011-86f0-4365-95fc-733f45796759",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "fcd4474c-26b6-44a2-a501-3373530bdd72",
+        "evidence_id": "2d33a87a-a075-4384-9846-48f2bf77f1e5",
+        "source_anchor": {
+          "page": 146,
+          "line_start": 5447,
+          "line_end": 5447,
+          "canonical_reference": "Điều 133"
+        },
+        "label": "Điều 133",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=fcd4474c-26b6-44a2-a501-3373530bdd72&page=146"
+      },
+      {
+        "id": "ccd37d50-fd5f-41a8-bf58-ffb80253ac0b",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "a7317da1-b366-4478-803e-38578f4e911c",
+        "evidence_id": "8fe045ce-66da-4c90-8eb6-201121dbb57b",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1802,
+          "line_end": 1802,
+          "canonical_reference": "Điều 133"
+        },
+        "label": "Điều 133",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=a7317da1-b366-4478-803e-38578f4e911c&page=1"
+      },
+      {
+        "id": "c5f11c6c-caff-4719-83ed-860722af96a3",
+        "document_id": "ecd62246-50b8-42da-beb1-9c88751fa485",
+        "document_version_id": "f9f16975-4fa3-4770-b72f-37d9b03cda56",
+        "knowledge_node_id": "c7db7ff4-98a5-4631-921d-9b828d014bf6",
+        "evidence_id": "26239721-d9b2-49f1-a9fd-a9830b4ac0bd",
+        "source_anchor": {
+          "page": 3,
+          "line_start": 86,
+          "line_end": 86,
+          "canonical_reference": "Điều 97"
+        },
+        "label": "Điều 97",
+        "document_title": "Hướng dẫn tổ chức lựa chọn nhà thầu qua mạng từ 01/07/2025 theo Luật 90/2025/QH15",
+        "document_tags": [
+          "Hướng dẫn",
+          "Đấu thầu qua mạng",
+          "Chuyển tiếp",
+          "Hệ thống mạng đấu thầu quốc gia",
+          "Luật 90/2025/QH15"
+        ],
+        "source_url": "/api/v1/documents/ecd62246-50b8-42da-beb1-9c88751fa485/source?node_id=c7db7ff4-98a5-4631-921d-9b828d014bf6&page=3"
+      },
+      {
+        "id": "003a338e-55d9-495c-9972-20564e9cca4b",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "bc2e3f58-ac1e-4356-b2f5-1e475b4de28b",
+        "evidence_id": "6d1fbd03-0874-49e8-8d24-a316689c7697",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 2158,
+          "line_end": 2158,
+          "canonical_reference": "Điều 146"
+        },
+        "label": "Điều 146",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=bc2e3f58-ac1e-4356-b2f5-1e475b4de28b&page=1"
+      },
+      {
+        "id": "244c856e-6761-40f7-842a-8c2a611e17da",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "e197afc6-6f3a-4bcc-94f7-39ccae1bda2d",
+        "evidence_id": "1c7efc8b-56a5-4b0a-8052-a643d54a9ef0",
+        "source_anchor": {
+          "page": 169,
+          "line_start": 6306,
+          "line_end": 6306,
+          "canonical_reference": "Điều 24 Khoản 25"
+        },
+        "label": "Điều 24 Khoản 25",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=e197afc6-6f3a-4bcc-94f7-39ccae1bda2d&page=169"
+      },
+      {
+        "id": "35a90a48-130a-4bb2-b670-feedfa4c95ea",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "35e81f08-a1e5-42aa-99fd-1a6e4a8132f7",
+        "evidence_id": "4c9db685-7f7f-4589-90e3-4bfbf4d85b79",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 2038,
+          "line_end": 2038,
+          "canonical_reference": "Điều 140 Khoản 25"
+        },
+        "label": "Điều 140 Khoản 25",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=35e81f08-a1e5-42aa-99fd-1a6e4a8132f7&page=1"
+      }
+    ]
+  },
+  {
+    "id": "Q10",
+    "category": "AMBIGUOUS",
+    "query": "Hồ sơ dự thầu nộp trễ 5 phút có được chấp nhận không?",
+    "search_latency_ms": 3696.2,
+    "ask_latency_ms": 8457.0,
+    "retrieved_docs": [],
+    "answer": "Dựa trên các bằng chứng pháp lý được cung cấp, hồ sơ dự thầu nộp trễ (sau thời điểm đóng thầu) **không được chấp nhận**.\n\nCụ thể:\n\n1.  **Nguyên tắc chung về thời hạn:** Theo **Nguồn 2** và **Nguồn 4** (Nghị định 214/2025/NĐ-CP, Điều 28 Khoản 3 Điểm a), hồ sơ dự thầu hoặc bất kỳ tài liệu nào được nhà thầu gửi chủ đầu tư **sau thời điểm đóng thầu** đều **không hợp lệ** và không được xem xét.\n    *   *Ngoại lệ duy nhất:* Chỉ các tài liệu làm rõ hồ sơ dự thầu theo yêu cầu của chủ đầu tư, hoặc tài liệu bổ sung nhằm chứng minh tư cách hợp lệ, báo cáo tài chính, nghĩa vụ thuế, nhân sự, thiết bị, hợp đồng tương tự... mới được chấp nhận sau thời điểm đóng thầu. Việc nộp trễ toàn bộ hồ sơ dự thầu không thuộc trường hợp ngoại lệ này.\n\n2.  **Áp dụng cho hồ sơ dự sơ tuyển:** Tương tự, theo **Nguồn 7** (Nghị định 214/2025/NĐ-CP, Điều 25 Khoản 1 Điểm đ), hồ sơ dự sơ tuyển gửi sau thời điểm đóng thầu là không hợp lệ, không được mở và bị loại.\n\n3.  **Hậu quả của việc nộp trễ:** Do hồ sơ nộp trễ được xác định là \"không hợp lệ\", nhà thầu sẽ không đáp ứng điều kiện về \"E-HSDT hợp lệ\" (theo **Nguồn 1** Khoản 33.1 hoặc **Nguồn 3** Khoản 32.1), do đó sẽ bị loại khỏi quá trình xét duyệt trúng thầu.\n\n**Kết luận:** Hồ sơ dự thầu nộp trễ 5 phút so với thời điểm đóng thầu là không hợp lệ và không được chấp nhận, trừ khi đó là tài liệu bổ sung làm rõ theo yêu cầu cụ thể của chủ đầu tư (không phải là việc nộp lại toàn bộ hồ sơ dự thầu).",
+    "citations_count": 8,
+    "citations": [
+      {
+        "id": "10168077-d8eb-4f1d-ad0c-c21035d300a4",
+        "document_id": "e81cb1ef-06b2-4332-bc1a-437c59969763",
+        "document_version_id": "01c1b1fd-a214-435f-a6ca-59d2981762a9",
+        "knowledge_node_id": "16cb883a-e7a9-4b01-9f1e-172ea384d027",
+        "evidence_id": "c98951a6-f0be-49d1-a217-edb1a4019846",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 62,
+          "line_end": 432,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 10A – E-HSMT gói thầu EPC, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "EPC",
+          "Đấu thầu qua mạng",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/e81cb1ef-06b2-4332-bc1a-437c59969763/source?node_id=16cb883a-e7a9-4b01-9f1e-172ea384d027&page=1"
+      },
+      {
+        "id": "c6c575ec-55b5-43ce-b3b8-643f68796607",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "cf1cd151-fc74-4858-bbed-e102bc8db6dc",
+        "evidence_id": "11387401-ce59-4638-83f4-af1d5d4e52ae",
+        "source_anchor": {
+          "page": 42,
+          "line_start": 1607,
+          "line_end": 1607,
+          "canonical_reference": "Điều 28 Khoản 3"
+        },
+        "label": "Điều 28 Khoản 3",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=cf1cd151-fc74-4858-bbed-e102bc8db6dc&page=42"
+      },
+      {
+        "id": "f95d35ae-2e0b-4be4-9150-83ca6c93ae49",
+        "document_id": "b429166d-a833-4ab7-9736-01f67ab5cbbe",
+        "document_version_id": "fd2ecb1e-400d-4e2b-a3d5-dbea6ae3f8c4",
+        "knowledge_node_id": "40a97d23-4c87-41ba-a027-0b3aec5cfcdd",
+        "evidence_id": "370fccd5-ebce-4038-b8ff-2581d8331207",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 63,
+          "line_end": 386,
+          "canonical_reference": "Khoản 1"
+        },
+        "label": "Khoản 1",
+        "document_title": "Mẫu số 3A – E-HSMT xây lắp, một giai đoạn một túi hồ sơ",
+        "document_tags": [
+          "Biểu mẫu",
+          "E-HSMT",
+          "Xây lắp",
+          "Đấu thầu qua mạng",
+          "Một giai đoạn một túi hồ sơ"
+        ],
+        "source_url": "/api/v1/documents/b429166d-a833-4ab7-9736-01f67ab5cbbe/source?node_id=40a97d23-4c87-41ba-a027-0b3aec5cfcdd&page=1"
+      },
+      {
+        "id": "cce1cbc3-6b98-4ad3-af3f-ee6be85516f8",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "0c230643-cce8-4daa-b57b-3da3648825ff",
+        "evidence_id": "8f67e6a8-a0d1-4121-a28b-a993fa7e3f60",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 486,
+          "line_end": 486,
+          "canonical_reference": "Điều 28 Khoản 3"
+        },
+        "label": "Điều 28 Khoản 3",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=0c230643-cce8-4daa-b57b-3da3648825ff&page=1"
+      },
+      {
+        "id": "df43f44b-ce94-4960-88a2-a728cf4dae2b",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "460ba912-15dd-4883-965b-15ec65539c9e",
+        "evidence_id": "1704bedb-a825-49c4-a3c8-f1573e89735e",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 1962,
+          "line_end": 1962,
+          "canonical_reference": "Điều 140 Khoản 5"
+        },
+        "label": "Điều 140 Khoản 5",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=460ba912-15dd-4883-965b-15ec65539c9e&page=1"
+      },
+      {
+        "id": "1b58fe33-0732-4436-8ecc-4f55eb3682bf",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "4c1b8c77-75fc-4ada-aa01-846b1e944e49",
+        "evidence_id": "7c4868ec-b7d8-405b-9a12-de96378b16c5",
+        "source_anchor": {
+          "page": 159,
+          "line_start": 5936,
+          "line_end": 5936,
+          "canonical_reference": "Điều 140 Khoản 5"
+        },
+        "label": "Điều 140 Khoản 5",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=4c1b8c77-75fc-4ada-aa01-846b1e944e49&page=159"
+      },
+      {
+        "id": "692eca54-9c4b-440d-b6b8-4fcc3fa3facf",
+        "document_id": "27fa40ad-003c-4956-9e20-778b2e2fdf58",
+        "document_version_id": "2a2f55d4-14e2-42cf-bd10-c9bd64f8286f",
+        "knowledge_node_id": "34a6624d-774b-44a1-b1db-f8b6a55f9ad2",
+        "evidence_id": "624ec8a0-4dd0-4f8f-a956-952496136487",
+        "source_anchor": {
+          "page": 1,
+          "line_start": 373,
+          "line_end": 373,
+          "canonical_reference": "Điều 25 Khoản 1"
+        },
+        "label": "Điều 25 Khoản 1",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Hướng dẫn thi hành"
+        ],
+        "source_url": "/api/v1/documents/27fa40ad-003c-4956-9e20-778b2e2fdf58/source?node_id=34a6624d-774b-44a1-b1db-f8b6a55f9ad2&page=1"
+      },
+      {
+        "id": "45657d11-60f6-4481-8a61-c4d715469cc1",
+        "document_id": "b5f338e5-c550-496d-a632-634131aaa16d",
+        "document_version_id": "a709f19c-65b6-4728-b1d1-d164567bfcc0",
+        "knowledge_node_id": "56b84ef7-efe7-4442-8e5f-298a2f62a340",
+        "evidence_id": "9ca115d2-ddd0-4aa6-999c-0af0b156fed2",
+        "source_anchor": {
+          "page": 49,
+          "line_start": 1877,
+          "line_end": 1877,
+          "canonical_reference": "Điều 31 Khoản 5"
+        },
+        "label": "Điều 31 Khoản 5",
+        "document_title": "Nghị định 214/2025/NĐ-CP – Quy định chi tiết Luật Đấu thầu về lựa chọn nhà thầu (bản PDF)",
+        "document_tags": [
+          "Nghị định",
+          "Đấu thầu",
+          "Lựa chọn nhà thầu",
+          "Chính phủ",
+          "Bản PDF"
+        ],
+        "source_url": "/api/v1/documents/b5f338e5-c550-496d-a632-634131aaa16d/source?node_id=56b84ef7-efe7-4442-8e5f-298a2f62a340&page=49"
+      }
+    ]
+  }
+]

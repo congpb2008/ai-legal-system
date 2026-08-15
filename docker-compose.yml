@@ -1,0 +1,32 @@
+services:
+  legal-platform:
+    image: legal-knowledge-platform:0.1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: legal-knowledge-platform
+    restart: unless-stopped
+    ports:
+      - "${LEGAL_PLATFORM_PORT:-8080}:8080"
+    environment:
+      - LEGAL_PLATFORM_HOST=0.0.0.0
+      - LEGAL_PLATFORM_PORT=8080
+      - LEGAL_PLATFORM_DATA_DIR=/app/storage
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-https://my-container-4vsbn24p-11434.serverless.fptcloud.jp}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY:-ollama}
+      - GENERATION_MODEL=${GENERATION_MODEL:-qwen3.6:35b-a3b}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-bge-m3:567m-fp16}
+      - LEGAL_PLATFORM_GENERATION_TIMEOUT=${LEGAL_PLATFORM_GENERATION_TIMEOUT:-120}
+      - LEGAL_PLATFORM_GENERATION_REASONING_EFFORT=${LEGAL_PLATFORM_GENERATION_REASONING_EFFORT:-none}
+    volumes:
+      - legal_platform_data:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  legal_platform_data:
+    driver: local

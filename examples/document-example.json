@@ -1,0 +1,56 @@
+{
+  "contract_version": "1.0",
+
+  "document_id": "DOC-2026-000001",
+
+  "document_number": "15/2026/QD-NH",
+
+  "title": "Quyết định về việc ban hành Quy chế mua sắm máy chủ",
+
+  "document_type": "DECISION",
+
+  "issuing_authority": "ABC Commercial Bank",
+
+  "status": "ACTIVE",
+
+  "effective_date": "2026-01-15",
+
+  "expiry_date": null,
+
+  "language": "vi",
+
+  "source": {
+    "type": "UPLOAD",
+    "filename": "QD15-2026.pdf",
+    "mime_type": "application/pdf",
+    "checksum_sha256": "8c62f8d57ab5f5e96d2c2c1e57d9e86dcb6c32d6b1a25bbec2efc63b5db1c114",
+    "uploaded_by": "admin",
+    "uploaded_at": "2026-08-06T08:12:31Z"
+  },
+
+  "vault": {
+    "vault_id": "legal-common",
+    "visibility": "SHARED"
+  },
+
+  "processing": {
+    "status": "UPLOADED",
+    "ocr_required": true,
+    "parser_version": null,
+    "knowledge_tree_version": null
+  },
+
+  "relationships": {
+    "supersedes": [],
+    "superseded_by": null,
+    "amends": [],
+    "amended_by": [],
+    "references": []
+  },
+
+  "tags": [
+    "procurement",
+    "server",
+    "infrastructure"
+  ]
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "model": "qwen3.6:35b-a3b",
+    "cold_load_s": 9.723654006,
+    "cold_total_s": 10.785471774,
+    "warm_ttft_s": 0.039469,
+    "warm_total_s": 1.311426529,
+    "prompt_tok_s": 3597.7602675517496,
+    "gen_tok_s": 167.897918065816,
+    "output_tokens": 150,
+    "response_sample": ""
+  },
+  {
+    "model": "glm-4.7-flash:latest",
+    "cold_load_s": 8.879946318,
+    "cold_total_s": 9.96774446,
+    "warm_ttft_s": 0.008214,
+    "warm_total_s": 1.191739147,
+    "prompt_tok_s": 15583.150718285851,
+    "gen_tok_s": 171.89278015944774,
+    "output_tokens": 150,
+    "response_sample": ""
+  },
+  {
+    "model": "qwen3.5:122b-a10b",
+    "cold_load_s": 16.882362388,
+    "cold_total_s": 18.583991531,
+    "warm_ttft_s": 0.077338,
+    "warm_total_s": 1.871715792,
+    "prompt_tok_s": 1836.0960976492797,
+    "gen_tok_s": 106.33230120112968,
+    "output_tokens": 150,
+    "response_sample": ""
+  },
+  {
+    "model": "gpt-oss:120b",
+    "cold_load_s": 23.222894198,
+    "cold_total_s": 24.450585778,
+    "warm_ttft_s": 0.009086,
+    "warm_total_s": 1.34569743,
+    "prompt_tok_s": 20471.05436935945,
+    "gen_tok_s": 166.94750947705361,
+    "output_tokens": 150,
+    "response_sample": ""
+  },
+  {
+    "model": "llama4:scout",
+    "cold_load_s": 39.674365664,
+    "cold_total_s": 40.720047157,
+    "warm_ttft_s": 0.075439,
+    "warm_total_s": 1.097288121,
+    "prompt_tok_s": 6322.989435172788,
+    "gen_tok_s": 90.44939697557696,
+    "output_tokens": 53,
+    "response_sample": "Luật 90/2025/ QH15 được Quốc hội ban hành vào ngày 25/06/2025. \n\nLuật này sửa đổi, bổ sung một số điều của Luật Đấu thầu số 22/2023/QH15."
+  }
+]

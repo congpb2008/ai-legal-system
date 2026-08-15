@@ -1,0 +1,168 @@
+{
+  "contract_version": "1.0",
+
+  "knowledge_tree_id": "KT-2026-000001",
+
+  "document": {
+    "document_id": "DOC-2026-000001",
+    "document_number": "15/2026/QD-NH",
+    "title": "Quyết định về việc ban hành Quy chế mua sắm máy chủ",
+    "document_type": "DECISION",
+    "issuing_authority": "ABC Commercial Bank",
+    "status": "ACTIVE",
+    "effective_date": "2026-01-15",
+    "vault_id": "legal-common"
+  },
+
+  "version": {
+    "tree_version": "1.0",
+    "parser_version": "parser-1.0.0",
+    "created_at": "2026-08-06T08:15:21Z"
+  },
+
+  "root_node_id": "NODE-0001",
+
+  "nodes": [
+    {
+      "node_id": "NODE-0001",
+      "parent_id": null,
+      "type": "DOCUMENT",
+      "number": null,
+      "title": "Quyết định về việc ban hành Quy chế mua sắm máy chủ",
+      "content": null,
+      "children": [
+        "NODE-0002",
+        "NODE-0008"
+      ],
+      "source": {
+        "page": 1,
+        "start_line": 1,
+        "end_line": 8
+      }
+    },
+
+    {
+      "node_id": "NODE-0002",
+      "parent_id": "NODE-0001",
+      "type": "CHAPTER",
+      "number": "I",
+      "title": "Quy định chung",
+      "content": null,
+      "children": [
+        "NODE-0003",
+        "NODE-0006"
+      ],
+      "source": {
+        "page": 2,
+        "start_line": 1,
+        "end_line": 5
+      }
+    },
+
+    {
+      "node_id": "NODE-0003",
+      "parent_id": "NODE-0002",
+      "type": "ARTICLE",
+      "number": "1",
+      "title": "Phạm vi điều chỉnh",
+      "content": "Quy chế này quy định việc mua sắm máy chủ phục vụ hạ tầng công nghệ thông tin của ngân hàng.",
+      "children": [
+        "NODE-0004",
+        "NODE-0005"
+      ],
+      "source": {
+        "page": 2,
+        "start_line": 6,
+        "end_line": 10
+      }
+    },
+
+    {
+      "node_id": "NODE-0004",
+      "parent_id": "NODE-0003",
+      "type": "CLAUSE",
+      "number": "1",
+      "title": null,
+      "content": "Áp dụng đối với toàn bộ đơn vị trực thuộc Khối Công nghệ Thông tin.",
+      "children": [],
+      "source": {
+        "page": 2,
+        "start_line": 11,
+        "end_line": 13
+      }
+    },
+
+    {
+      "node_id": "NODE-0005",
+      "parent_id": "NODE-0003",
+      "type": "CLAUSE",
+      "number": "2",
+      "title": null,
+      "content": "Không áp dụng đối với các thiết bị văn phòng thông thường.",
+      "children": [],
+      "source": {
+        "page": 2,
+        "start_line": 14,
+        "end_line": 16
+      }
+    },
+
+    {
+      "node_id": "NODE-0006",
+      "parent_id": "NODE-0002",
+      "type": "ARTICLE",
+      "number": "2",
+      "title": "Đối tượng áp dụng",
+      "content": "Các đơn vị tham gia mua sắm, thẩm định và phê duyệt.",
+      "children": [
+        "NODE-0007"
+      ],
+      "source": {
+        "page": 3,
+        "start_line": 1,
+        "end_line": 4
+      }
+    },
+
+    {
+      "node_id": "NODE-0007",
+      "parent_id": "NODE-0006",
+      "type": "POINT",
+      "number": "a",
+      "title": null,
+      "content": "Phòng Công nghệ Thông tin.",
+      "children": [],
+      "source": {
+        "page": 3,
+        "start_line": 5,
+        "end_line": 6
+      }
+    },
+
+    {
+      "node_id": "NODE-0008",
+      "parent_id": "NODE-0001",
+      "type": "APPENDIX",
+      "number": "I",
+      "title": "Danh mục cấu hình máy chủ",
+      "content": null,
+      "children": [],
+      "source": {
+        "page": 10,
+        "start_line": 1,
+        "end_line": 40
+      }
+    }
+  ],
+
+  "relationships": [],
+
+  "statistics": {
+    "total_nodes": 8,
+    "chapters": 1,
+    "articles": 2,
+    "clauses": 2,
+    "points": 1,
+    "appendices": 1
+  }
+}
