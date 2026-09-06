@@ -44,3 +44,25 @@ source-archive checksum in the source bundle. See `PACKAGE_MANIFEST.md` and
 | `legal-platform-data.tar.gz` | 193,969,231 bytes | `3f8456c455309fcb57ceb11afb530f7b141b0d8213e251a3bbc5dbd72ae784ff` |
 
 Final verdict: `PACKAGING BLOCKED — Docker Engine is not installed on this host; the remote Ollama hostname cannot be resolved, and agent-browser is unavailable for browser validation.`
+
+## GitHub publication status
+
+- Existing remote: `https://github.com/congpb2008/ai-legal-system.git`
+- Existing remote branch: `main` (README-only initial commit was preserved by a
+  normal unrelated-history merge; no force-push was used).
+- Local publish branch: `main`; local packaging history is committed.
+- Push attempt: **BLOCKED** — Git reported `could not read Username for
+  'https://github.com': No such device or address`.
+- GitHub CLI/credential connector: unavailable (`gh` not installed).
+- Repository visibility: not changed or assumed; no new repository was created.
+- Release tag: not created because Docker/browser/Ollama validation is blocked.
+
+After configuring GitHub credentials on a trusted machine, publish with:
+
+```bash
+git push origin main
+git ls-remote --heads origin main
+```
+
+Do not attach `release/legal-platform-data.tar.gz` or any database/source
+document backup to GitHub.
