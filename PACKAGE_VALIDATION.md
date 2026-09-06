@@ -40,7 +40,7 @@ source-archive checksum in the source bundle. See `PACKAGE_MANIFEST.md` and
 
 | File | Size | SHA-256 |
 | --- | ---: | --- |
-| `legal-platform-source.tar.gz` | 29,690,699 bytes | `48048cd83426af74c7c5aeed65e323289c4ecafc937b5a1552dccde9b93461a2` |
-| `legal-platform-data.tar.gz` | 193,969,231 bytes | `02856c25e2b5177e825f6bb5c7920743ff25308fb44f6e0f319878c67931f1ef` |
+| `legal-platform-source.tar.gz` | 29,725,051 bytes | `973846fdca9d6cddb1e1556940a665c92c1dc476d1014de1c93eb2ba3ab1afba` |
+| `legal-platform-data.tar.gz` | 193,969,231 bytes | `3f8456c455309fcb57ceb11afb530f7b141b0d8213e251a3bbc5dbd72ae784ff` |
 
 Final verdict: `PACKAGING BLOCKED — Docker Engine is not installed on this host; the remote Ollama hostname cannot be resolved, and agent-browser is unavailable for browser validation.`
