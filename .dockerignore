@@ -37,6 +37,10 @@ storage/files/
 # Backups, artifacts & logs
 .artifacts/
 .backups/
+release/*.tar.gz
+release/checksums/
+release/restore-*/
+release/.staging/
 *.log
 
 # Environment & secrets

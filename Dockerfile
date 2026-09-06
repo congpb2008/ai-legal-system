@@ -22,12 +22,17 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Upgrade pip and wheel
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy packaging configuration and backend source
+# Copy the pinned production dependency set before application source so Docker
+# can reuse this layer when only code changes.
 COPY pyproject.toml README.md ./
+COPY requirements.lock ./
+RUN pip install --no-cache-dir -r requirements.lock
 COPY backend/ ./backend/
 
-# Install the application and its dependencies into /opt/venv
-RUN pip install --no-cache-dir .
+# The lock supplies all runtime dependencies.  Installing with --no-deps keeps
+# the image repeatable even though pyproject.toml retains its compatibility
+# ranges for library consumers.
+RUN pip install --no-cache-dir --no-deps .
 
 # ------------------------------------------------------------------------------
 # Stage 2: Final minimal runtime image
@@ -43,6 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     tesseract-ocr \
     tesseract-ocr-vie \
+    util-linux \
     curl \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* /var/tmp/*
@@ -71,16 +77,12 @@ COPY --chown=appuser:appgroup frontend/ ./frontend/
 COPY --chown=appuser:appgroup design/ ./design/
 COPY --chown=appuser:appgroup docker-entrypoint.sh /app/docker-entrypoint.sh
 
-# Prepare persistent data volume directory with proper permissions
+# Prepare the persistent mount point. The entrypoint starts as root only long
+# enough to make an empty or host bind-mounted directory writable, then drops
+# permanently to appuser before launching Python.
 RUN mkdir -p /app/storage/db /app/storage/files && \
     chown -R appuser:appgroup /app/storage && \
-    chmod 750 /app/docker-entrypoint.sh
-
-# Declare persistent storage mount point
-VOLUME ["/app/storage"]
-
-# Switch to non-root user
-USER appuser
+    chmod 755 /app/docker-entrypoint.sh
 
 # Expose HTTP API and Web UI port
 EXPOSE 8080

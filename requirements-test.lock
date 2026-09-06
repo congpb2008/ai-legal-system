@@ -1,0 +1,7 @@
+# Test dependencies for the supported Python 3.12 development environment.
+# Install after requirements.lock.
+iniconfig==2.3.0
+packaging==26.3
+pluggy==1.6.0
+Pygments==2.17.2
+pytest==9.1.1

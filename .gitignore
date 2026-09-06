@@ -64,6 +64,11 @@ htmlcov/
 # Raw document corpora / Large local sample files
 Luat-DT-QH15/
 
+# Generated release outputs (keep packaging scripts/docs, never archives/data)
+release/*.tar.gz
+release/*-image.tar.gz
+release/checksums/
+
 # OS generated files
 .DS_Store
 Thumbs.db

@@ -1,0 +1,11 @@
+# Generated from the known-working Python 3.12 runtime on 2026-09-06.
+# Install with: python -m pip install -r requirements.lock
+annotated-types==0.8.0
+pdf2image==1.17.0
+Pillow==12.3.0
+pydantic==2.13.4
+pydantic_core==2.46.4
+PyMuPDF==1.28.2
+pytesseract==0.3.13
+typing-inspection==0.4.2
+typing_extensions==4.16.0
