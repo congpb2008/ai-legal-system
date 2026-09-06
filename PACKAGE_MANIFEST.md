@@ -2,10 +2,10 @@
 
 Packaging date: 2026-09-06
 Project version: `0.1.0`
-Source commit: `5ee94ccafb5c39ecd55f45dcb4755e342f05ac7f` (`main`)
+Source/package commit: `6c5b061` (`main`)
 
-The working tree was clean at the start of this task. The package-related
-changes are intentionally uncommitted and are included in the source snapshot.
+The working tree was clean at the start of this task. Packaging changes are
+committed in the source/package commit above; generated archives remain ignored.
 
 ## Artifacts
 
