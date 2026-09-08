@@ -110,6 +110,7 @@ class ProviderConfig:
     max_tokens: int = 4096
     temperature: float = 0.1
     reasoning_effort: str = ""
+    embedding_model: str = "bge-m3"
 
     def to_safe_dict(self) -> dict[str, Any]:
         """Return a dict suitable for status/UI display — no secrets."""
@@ -122,6 +123,7 @@ class ProviderConfig:
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
             "has_api_key": bool(self.api_key),
+            "embedding_model": self.embedding_model,
         }
 
 
@@ -350,11 +352,9 @@ class OpenAICompatibleProvider:
 
 def _data_dir() -> Path:
     """Return the same durable data root used by the production server."""
-    configured = os.environ.get("LEGAL_PLATFORM_DATA_DIR")
-    if configured:
-        return Path(configured).expanduser().resolve()
-    project_root = Path(__file__).resolve().parents[4]
-    return (project_root / "storage").resolve()
+    from legal_platform.paths import data_root
+    return data_root()
+
 
 
 def _config_path() -> Path:
@@ -407,6 +407,7 @@ def load_config() -> ProviderConfig:
 def save_config(config: ProviderConfig) -> None:
     """Save the provider configuration to disk."""
     path = _config_path()
+    (path.parent / '.local-mode').unlink(missing_ok=True)
     path.write_text(json.dumps({
         "provider_type": config.provider_type,
         "base_url": config.base_url,
@@ -416,14 +417,18 @@ def save_config(config: ProviderConfig) -> None:
         "max_tokens": config.max_tokens,
         "temperature": config.temperature,
         "reasoning_effort": config.reasoning_effort,
+        "embedding_model": config.embedding_model,
     }, indent=2))
-    path.chmod(0o600)
+    from legal_platform.operations import restrict_file
+    restrict_file(path)
 
 
 def is_configured() -> bool:
     """Check whether the application has been configured with a provider."""
-    # Check the sentinel file first (set by mark_configured / setup complete)
+    # An explicit local-mode choice overrides environment provider defaults.
     data_dir = _data_dir()
+    if (data_dir / '.local-mode').exists():
+        return False
     if (data_dir / ".configured").exists():
         return True
     path = _config_path()
@@ -453,4 +458,4 @@ def mark_configured() -> None:
 def is_first_run() -> bool:
     """Check whether this is the first run (no configuration exists)."""
     data_dir = _data_dir()
-    return not (data_dir / ".configured").exists()
+    return not is_configured()

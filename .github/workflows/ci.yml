@@ -1,0 +1,54 @@
+name: Verify and package
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements*.lock
+      - run: python -m pip install -r requirements.lock -r requirements-test.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m pytest --tb=short
+  windows-package:
+    needs: tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.lock -r packaging/requirements-build.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m PyInstaller --noconfirm packaging/LegalLibrary.spec
+      - name: Check bundled desktop and PDF runtime
+        shell: pwsh
+        run: |
+          $check = Join-Path $env:RUNNER_TEMP 'legal-library-check'
+          $process = Start-Process -FilePath dist/LegalLibrary/LegalLibrary.exe -ArgumentList @('--self-check', '--data-dir', $check) -WindowStyle Hidden -PassThru -Wait
+          if ($process.ExitCode -ne 0 -or !(Test-Path "$check/self-check.json")) { throw 'Executable runtime check failed' }
+      - name: Add instructions
+        shell: pwsh
+        run: |
+          Copy-Item docs/WINDOWS-QUICKSTART.md dist/LegalLibrary/START-HERE.md
+          Copy-Item packaging/THIRD-PARTY-NOTICES.md dist/LegalLibrary/THIRD-PARTY-NOTICES.md
+          Copy-Item docs/MAINTAINER-GUIDE.md dist/LegalLibrary/MAINTAINER-GUIDE.md
+          Copy-Item docs/RELEASE-HANDOFF.md dist/LegalLibrary/RELEASE-HANDOFF.md
+          python packaging/collect_licenses.py dist/LegalLibrary
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Legal-Library-Windows-x64
+          path: dist/LegalLibrary
+          retention-days: 14

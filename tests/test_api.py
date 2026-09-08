@@ -187,7 +187,7 @@ class TestHealthStatus:
     def test_defaults(self):
         hs = HealthStatus()
         assert hs.status == "healthy"
-        assert hs.version == "0.1.0"
+        assert hs.version == "0.2.0"
 
 
 # ======================================================================
@@ -195,60 +195,69 @@ class TestHealthStatus:
 # ======================================================================
 
 
+def registered_auth(username='admin'):
+    from legal_platform.accounts import digest
+    handler = AuthHandler()
+    handler.bootstrap_hash = digest('test-setup-code')
+    created = handler.register({'username': username, 'password': 'correct-test-password', 'code':'test-setup-code'}, bootstrap=True)
+    assert created.success
+    return handler
+
+
 class TestAuthHandler:
     """Authentication endpoints (tasks/014-api.md #AuthenticationAPIs)."""
 
     def test_login_success(self):
-        handler = AuthHandler()
-        resp = handler.login({"user_id": "admin", "password": "secret"})
+        handler = registered_auth()
+        resp = handler.login({"user_id": "admin", "password": "correct-test-password"})
         assert resp.success is True
-        assert resp.data["user_id"] == "admin"
+        assert resp.data["account"]["username"] == "admin"
         assert "token" in resp.data
 
     def test_login_missing_credentials(self):
-        handler = AuthHandler()
+        handler = registered_auth()
         resp = handler.login({})
         assert resp.success is False
         assert resp.status == 400
 
     def test_login_empty_credentials(self):
-        handler = AuthHandler()
+        handler = registered_auth()
         resp = handler.login({"user_id": "", "password": ""})
         assert resp.success is False
         assert resp.status == 400
 
     def test_logout(self):
-        handler = AuthHandler()
-        login_resp = handler.login({"user_id": "admin", "password": "x"})
+        handler = registered_auth()
+        login_resp = handler.login({"user_id": "admin", "password": "correct-test-password"})
         token = login_resp.data["token"]
         resp = handler.logout(token)
         assert resp.success is True
 
     def test_me_authenticated(self):
-        handler = AuthHandler()
-        login_resp = handler.login({"user_id": "admin", "password": "x"})
+        handler = registered_auth()
+        login_resp = handler.login({"user_id": "admin", "password": "correct-test-password"})
         token = login_resp.data["token"]
         resp = handler.me(token)
         assert resp.success is True
-        assert resp.data["user_id"] == "admin"
+        assert resp.data["account"]["username"] == "admin"
 
     def test_me_unauthenticated(self):
-        handler = AuthHandler()
+        handler = registered_auth()
         resp = handler.me("invalid-token")
         assert resp.success is False
         assert resp.status == 401
 
     def test_me_no_token(self):
-        handler = AuthHandler()
+        handler = registered_auth()
         resp = handler.me(None)
         assert resp.success is False
         assert resp.status == 401
 
     def test_resolve_user(self):
-        handler = AuthHandler()
-        login_resp = handler.login({"user_id": "admin", "password": "x"})
+        handler = registered_auth()
+        login_resp = handler.login({"user_id": "admin", "password": "correct-test-password"})
         token = login_resp.data["token"]
-        assert handler.resolve_user(token) == "admin"
+        assert handler.resolve_user(token) == login_resp.data["user_id"]
         assert handler.resolve_user("bad") is None
         assert handler.resolve_user(None) is None
 
@@ -820,9 +829,9 @@ class TestEdgeCases:
 
     def test_auth_handler_token_uniqueness(self):
         """Each login should generate a unique token."""
-        handler = AuthHandler()
-        r1 = handler.login({"user_id": "user1", "password": "x"})
-        r2 = handler.login({"user_id": "user2", "password": "x"})
+        handler = registered_auth()
+        r1 = handler.login({"username": "admin", "password": "correct-test-password"})
+        r2 = handler.login({"username": "admin", "password": "correct-test-password"})
         assert r1.data["token"] != r2.data["token"]
 
     def test_vault_handler_list_with_filters(self):
@@ -987,10 +996,14 @@ class TestHandlerStateSharing:
 
             base = f"http://127.0.0.1:{port}"
 
+            from pathlib import Path
+            import os
+            created = api._auth.register({'username':'admin','password':'correct-test-password','code':(Path(os.environ['LEGAL_PLATFORM_DATA_DIR'])/'setup-code.txt').read_text()}, bootstrap=True)
+            assert created.success
             # Login
             req = urllib.request.Request(
                 f"{base}/api/v1/auth/login",
-                data=json.dumps({"user_id": "admin", "password": "admin"}).encode(),
+                data=json.dumps({"user_id": "admin", "password": "correct-test-password"}).encode(),
                 headers={"Content-Type": "application/json"},
             )
             with urllib.request.urlopen(req) as resp:

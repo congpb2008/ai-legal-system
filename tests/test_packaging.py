@@ -34,7 +34,7 @@ class TestPackageImport:
     """The package must be importable in a clean environment."""
 
     def test_package_version(self):
-        assert legal_platform.__version__ == "0.1.0"
+        assert legal_platform.__version__ == "0.2.0"
 
     def test_api_entrypoint_importable(self):
         # Importing the server module must succeed with no PYTHONPATH hack.
@@ -123,7 +123,7 @@ class TestConsoleScript:
     def test_console_script_installed(self):
         """The console script should be discoverable in the venv bin dir."""
         bin_dir = Path(sys.executable).parent
-        script = bin_dir / "legal-platform"
+        script = bin_dir / ("legal-platform.exe" if sys.platform == "win32" else "legal-platform")
         if not script.exists():
             import shutil
 
@@ -189,7 +189,7 @@ class TestServerStartup:
                     time.sleep(0.1)
             assert response is not None, "Server did not become reachable"
             assert response["success"] is True
-            assert response["data"]["status"] == "healthy"
+            assert response["data"]["status"] == "alive"
         finally:
             api.stop()
             thread.join(timeout=2)

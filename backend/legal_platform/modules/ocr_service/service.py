@@ -95,6 +95,7 @@ class OcrService:
         self.storage = file_storage or LocalFileStorage()
         self.engine = ocr_engine or AutoOcrEngine(
             digital_engine=PyMuPdfDigitalExtractor(),
+            image_engine=__import__('legal_platform.modules.ocr_service.engine', fromlist=['Pdf2ImageTesseractEngine']).Pdf2ImageTesseractEngine(),
         )
         # Ensure OCR result table + audit table exist
         init_audit_log(self.registry.repo.conn)
@@ -167,7 +168,7 @@ class OcrService:
             raise OcrEngineError(f"Failed to retrieve file from storage: {e}") from e
 
         return self.process_bytes(
-            document_id, file_bytes, user_id=user_id, version_id=doc.versions[0].version_id,
+            document_id, file_bytes, user_id=user_id, version_id=doc.current_version.version_id,
         )
 
     # ------------------------------------------------------------------
@@ -200,7 +201,7 @@ class OcrService:
                 f"expected OCR_PENDING"
             )
 
-        vid = version_id or doc.versions[0].version_id
+        vid = version_id or doc.current_version.version_id
 
         # --- transition to OCR_RUNNING ---
         self.registry.transition_processing(

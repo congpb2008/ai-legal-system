@@ -336,7 +336,7 @@ class TestEvaluators:
         evaluator = ParserEvaluator()
         result = evaluator.evaluate(case)
         assert result.case_id == "parse-test"
-        assert result.passed is True  # Stub always passes
+        assert result.passed is False  # Missing ground truth must never count as a pass
 
     def test_pipeline_evaluator(self):
         case = BenchmarkCase(

@@ -1,3 +1,5 @@
+> Historical prototype documentation. For the implemented LAN release, use the [Windows quickstart](../../WINDOWS-QUICKSTART.md) and [maintainer guide](../../MAINTAINER-GUIDE.md). Account, setup, UI and deployment instructions below may be outdated.
+
 # Bắt đầu nhanh
 
 Hướng dẫn này giúp bạn khởi động server, đăng nhập và sử dụng nền tảng lần đầu tiên.

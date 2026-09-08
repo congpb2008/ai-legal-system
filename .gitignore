@@ -42,7 +42,7 @@ secrets/
 credentials/
 
 # Database & Runtime local storage
-storage/
+/storage/
 *.db
 *.sqlite
 *.sqlite3

@@ -125,77 +125,7 @@ def _document_metadata_from_body(body: dict[str, Any]) -> dict[str, Any] | None:
 # ---------------------------------------------------------------------------
 
 
-class AuthHandler:
-    """Authentication endpoints (tasks/014-api.md #AuthenticationAPIs).
-
-    This is a minimal implementation. A production system would integrate
-    with an identity provider (OAuth2, LDAP, SAML, etc.).
-    """
-
-    # Simple token store (user_id -> token mapping, in-memory)
-    _tokens: dict[str, str] = {}  # token -> user_id
-    _user_tokens: dict[str, str] = {}  # user_id -> token
-
-    def login(self, body: dict[str, Any]) -> ApiResponse:
-        """POST /v1/auth/login
-
-        Body: {"user_id": "...", "password": "..."}
-        For MVP, any non-empty user_id + password combination is accepted.
-        """
-        user_id = (body.get("user_id") or "").strip()
-        password = (body.get("password") or "").strip()
-
-        if not user_id or not password:
-            return ApiResponse.err_response(
-                ApiError(
-                    code="INVALID_CREDENTIALS",
-                    message="user_id and password are required.",
-                    category=ErrorCategory.VALIDATION,
-                ),
-                status=400,
-            )
-
-        # Generate a simple token
-        token = str(uuid4())
-        self._tokens[token] = user_id
-        self._user_tokens[user_id] = token
-
-        return ApiResponse.ok(
-            data={
-                "token": token,
-                "user_id": user_id,
-                "token_type": "Bearer",
-            },
-            metadata={"note": "MVP simple token auth; replace with OAuth2 in production."},
-        )
-
-    def logout(self, token: Optional[str]) -> ApiResponse:
-        """POST /v1/auth/logout"""
-        if token and token in self._tokens:
-            user_id = self._tokens.pop(token, None)
-            if user_id:
-                self._user_tokens.pop(user_id, None)
-        return ApiResponse.ok(data={"message": "Logged out."})
-
-    def me(self, token: Optional[str]) -> ApiResponse:
-        """GET /v1/auth/me"""
-        if not token or token not in self._tokens:
-            return ApiResponse.err_response(
-                ApiError(
-                    code="NOT_AUTHENTICATED",
-                    message="Invalid or missing authentication token.",
-                    category=ErrorCategory.AUTHENTICATION,
-                ),
-                status=401,
-            )
-        user_id = self._tokens[token]
-        return ApiResponse.ok(data={"user_id": user_id})
-
-    def resolve_user(self, token: Optional[str]) -> Optional[str]:
-        """Resolve a token to a user_id, or None if invalid."""
-        if token and token in self._tokens:
-            return self._tokens[token]
-        return None
+from legal_platform.accounts import AuthHandler
 
 
 # ---------------------------------------------------------------------------
@@ -260,6 +190,7 @@ class VaultHandler:
                 name=name,
                 vault_type=vault_type,
                 owner=user_id,
+                organization_id=UUID(body['organization_id']) if body.get('organization_id') else None,
                 description=description,
                 retention_policy=retention_policy,
             )
@@ -556,7 +487,9 @@ class DocumentHandler:
         forbidden = self._require_document_permission(doc, user_id, Permission.READ)
         if forbidden:
             return forbidden
-        return ApiResponse.ok(data=self._doc_to_dict(doc))
+        payload = self._doc_to_dict(doc)
+        payload['can_manage'] = self.vault.check_permission(doc.vault_id, user_id, Permission.MANAGE)
+        return ApiResponse.ok(data=payload)
 
     def delete_document(self, doc_id: str, user_id: str) -> ApiResponse:
         """DELETE /v1/documents/{documentId}"""
@@ -644,7 +577,15 @@ class DocumentHandler:
         if forbidden:
             return forbidden
 
-        source = self.registry.get_source_metadata(did)
+        requested_version = params.get('version_id') or params.get('document_version_id')
+        if requested_version:
+            version_id = UUID(requested_version)
+        else:
+            active = next((v for v in document.versions if v.status.value == 'ACTIVE'), document.versions[-1])
+            version_id = active.version_id
+        if not any(v.version_id == version_id for v in document.versions):
+            return AuthHandler.error('Source version not found.', 404)
+        source = self.registry.get_source_metadata(did, version_id=version_id)
         if source is None or self.storage is None:
             return ApiResponse.err_response(
                 ApiError(code="SOURCE_NOT_FOUND", message="Original source is not available.",
@@ -660,7 +601,6 @@ class DocumentHandler:
                 status=410,
             )
 
-        version_id = document.versions[0].version_id
         tree = self.parser.get_tree_for_version(version_id) if self.parser else None
         node = None
         node_id = params.get("node_id")
@@ -731,6 +671,7 @@ class DocumentHandler:
             "size_bytes": source.get("size_bytes") or None,
             "checksum_sha256": source.get("checksum_sha256") or None,
             "page_count": ocr_result.total_pages if ocr_result else None,
+            "extraction_warning": "Word page layout is not preserved. These locations refer to extracted text." if ocr_result and ocr_result.engine == "docx-xml" else "For OCR sources, check recognition against the original file.",
             "page": ({
                 "number": page.page_number,
                 "text": page.text,
@@ -803,12 +744,13 @@ class DocumentHandler:
             "created_at": doc.created_at.isoformat() if hasattr(doc.created_at, 'isoformat') else str(doc.created_at),
             "updated_at": doc.updated_at.isoformat() if hasattr(doc.updated_at, 'isoformat') else str(doc.updated_at),
             "version_count": len(doc.versions) if hasattr(doc, 'versions') else 0,
+            "versions": [v.model_dump(mode='json') for v in doc.versions],
             "original_filename": source.get("filename"),
             "tags": metadata.get("tags", []),
             "keywords": metadata.get("keywords", []),
-            "issue_date": metadata.get("issue_date"),
-            "effective_date": metadata.get("effective_date"),
-            "expiration_date": metadata.get("expiration_date"),
+            "issue_date": str(metadata["issue_date"])[:10] if metadata.get("issue_date") else None,
+            "effective_date": str(metadata["effective_date"])[:10] if metadata.get("effective_date") else None,
+            "expiration_date": str(metadata["expiration_date"])[:10] if metadata.get("expiration_date") else None,
             "metadata": metadata,
         }
 
@@ -1091,6 +1033,7 @@ class SearchHandler:
                 vault_ids=vault_ids,
                 document_id=document_id,
                 top_k=top_k,
+                as_of=body.get('as_of'),
             )
         except EmbeddingEngineError:
             return self._embedding_unavailable()
@@ -1129,6 +1072,7 @@ class SearchHandler:
                 vault_ids=vault_ids,
                 document_id=document_id,
                 top_k=top_k,
+                as_of=body.get('as_of'),
                 strategy=strategy,
             )
         except EmbeddingEngineError:
@@ -1257,7 +1201,9 @@ class AnswerHandler:
         generation_service: "GenerationService | None" = None,
         citation_service: "CitationBuilderService | None" = None,
         vault_service: "VaultService | None" = None,
+        ocr_service=None,
     ):
+        self.ocr = ocr_service
         self.generation = generation_service or GenerationService()
         self.citation = citation_service or CitationBuilderService()
         self.vault = vault_service or VaultService(registry=self.generation.registry)
@@ -1290,11 +1236,15 @@ class AnswerHandler:
                 vault_ids=vault_ids,
                 document_id=document_id,
                 strategy="HYBRID",
+                as_of=body.get('as_of'),
             )
             evidence = self.generation.filter_answer_evidence(
                 [item.evidence for item in reranked],
                 query=query,
             )
+            if self.ocr:
+                from legal_platform.grounding import source_passages
+                evidence = source_passages(evidence, self.ocr, self.citation.parser)
             answer = self.generation.generate(
                 query,
                 evidence=evidence,
@@ -1327,7 +1277,18 @@ class AnswerHandler:
                 status=500,
             )
 
-        return ApiResponse.ok(data=self._answer_to_dict(answer))
+        payload = self._answer_to_dict(answer)
+        payload['answer_mode'] = 'verified_quotations'
+        payload['as_of'] = body.get('as_of') or __import__('datetime').date.today().isoformat()
+        payload['scope'] = {'vault_id': str(vault_id) if vault_id else None, 'document_id': str(document_id) if document_id else None}
+        payload['confidence'] = None
+        payload['evidence_status'] = 'no_evidence' if not answer.citations else 'source_quotations'
+        from legal_platform.grounding import evidence_date_info
+        for citation in payload['citations']:
+            document = self.generation.registry.get_document(UUID(citation['document_id']))
+            if document:
+                citation.update(evidence_date_info(document))
+        return ApiResponse.ok(data=payload)
 
     def _answer_to_dict(self, answer: Answer) -> dict[str, Any]:
         return {
@@ -1478,7 +1439,7 @@ class AdminHandler:
             if doc.vault_id in authorized
         )
         return ApiResponse.ok(data={
-            "version": "0.1.0",
+            "version": "0.2.0",
             "index": index_stats,
             "document_count": document_count,
         })
@@ -1981,7 +1942,7 @@ class HealthHandler:
         checks = self._checks()
         status = HealthStatus(
             status=("degraded" if any(v.startswith("unhealthy") for v in checks.values()) else "healthy"),
-            version="0.1.0",
+            version="0.2.0",
             uptime_seconds=time.time() - _START_TIME,
             checks=checks,
         )
@@ -2089,9 +2050,12 @@ class SetupHandler:
         if "provider_type" in body:
             config.provider_type = str(body["provider_type"])
         if "base_url" in body:
-            config.base_url = str(body["base_url"]).strip()
-        if "api_key" in body and body["api_key"]:
-            config.api_key = str(body["api_key"]).strip()
+            new_url = str(body['base_url']).strip().rstrip('/')
+            if new_url != config.base_url.rstrip('/'):
+                config.api_key = ''
+            config.base_url = new_url
+        if "api_key" in body:
+            config.api_key = str(body["api_key"] or '').strip()
         if "model" in body:
             config.model = str(body["model"]).strip()
         if "timeout_seconds" in body:
@@ -2103,6 +2067,10 @@ class SetupHandler:
         if "reasoning_effort" in body:
             config.reasoning_effort = str(body["reasoning_effort"]).strip().lower()
 
+        if 'embedding_model' in body:
+            config.embedding_model = str(body['embedding_model']).strip()
+            if not config.embedding_model or len(config.embedding_model) > 200:
+                return AuthHandler.error('Enter an embedding model name.')
         # Validate required fields
         if not config.base_url:
             return ApiResponse.err_response(
@@ -2137,6 +2105,8 @@ class SetupHandler:
                 status=400,
             )
 
+        if not 1 <= config.timeout_seconds <= 120 or not 256 <= config.max_tokens <= 8192 or not 0 <= config.temperature <= 1:
+            return AuthHandler.error('Choose a timeout of 1–120 seconds, 256–8192 output tokens and temperature 0–1.')
         self._save_config(config)
         if self._on_config_saved is not None:
             self._on_config_saved(config)
@@ -2149,9 +2119,12 @@ class SetupHandler:
         """
         config = self._load_config()
         if "base_url" in body:
-            config.base_url = str(body["base_url"]).strip()
-        if "api_key" in body and body["api_key"]:
-            config.api_key = str(body["api_key"]).strip()
+            new_url = str(body['base_url']).strip().rstrip('/')
+            if new_url != config.base_url.rstrip('/'):
+                config.api_key = ''
+            config.base_url = new_url
+        if "api_key" in body:
+            config.api_key = str(body["api_key"] or '').strip()
         if "model" in body:
             config.model = str(body["model"]).strip()
         if "timeout_seconds" in body:
@@ -2164,6 +2137,11 @@ class SetupHandler:
                 status=400,
             )
 
+        from legal_platform.modules.generation.provider import validate_provider_url
+        valid, reason = validate_provider_url(config.base_url)
+        if not valid:
+            return AuthHandler.error(reason)
+        config.timeout_seconds = min(15, max(1, config.timeout_seconds))
         provider = self._OpenAICompatibleProvider(config=config)
         ok, message = provider.check_connectivity()
         return ApiResponse.ok(data={
@@ -2174,4 +2152,6 @@ class SetupHandler:
     def complete(self) -> ApiResponse:
         """POST /v1/setup/complete — mark setup as complete."""
         self._mark_configured()
+        if self._on_config_saved is not None:
+            self._on_config_saved(self._load_config())
         return ApiResponse.ok(data={"message": "Setup complete.", "configured": True})

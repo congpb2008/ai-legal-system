@@ -50,7 +50,7 @@ class RetrievalEvaluator:
 
         result = self.retrieval.search(
             case.question,
-            top_k=20,
+            top_k=10,
         )
 
         elapsed_ms = (time.time() - start) * 1000
@@ -83,7 +83,7 @@ class RetrievalEvaluator:
             for k, v in metrics.items()
         ]
 
-        failure = None
+        failure = None if passed else FailureCategory.WRONG_GENERATION
         if not passed:
             failure = FailureCategory.WRONG_RETRIEVAL
 
@@ -123,7 +123,7 @@ class CitationEvaluator:
 
         # Extract generated citations
         generated_citations = [
-            {"document": str(c.document_id), "reference": c.source_anchor or ""}
+            {"document": str(c.document_id), "reference": c.source_anchor.canonical_reference if c.source_anchor else ""}
             for c in answer.citations
         ]
 
@@ -143,7 +143,7 @@ class CitationEvaluator:
             for k, v in metrics.items()
         ]
 
-        failure = None
+        failure = None if passed else FailureCategory.WRONG_GENERATION
         if not passed:
             failure = FailureCategory.WRONG_CITATION
 
@@ -194,14 +194,28 @@ class GenerationEvaluator:
             confidence_score=answer.confidence.score if answer.confidence else 0.0,
         )
 
-        passed = has_answer and has_citations
+        # Corpus-specific assertions are not a substitute for expert correctness review.
+        import unicodedata
+        normalize = lambda value: ' '.join(unicodedata.normalize('NFC', value).casefold().split())
+        actual = normalize(answer.response.content)
+        expected_abstention = case.expected_abstention or case.category.value == 'ABSTENTION'
+        if expected_abstention:
+            passed = answer.status == AnswerStatus.NO_EVIDENCE and not has_citations
+        else:
+            required = case.required_phrases or ([case.expected_answer] if case.expected_answer else [])
+            cited_docs = {str(c.document_id) for c in answer.citations}
+            passed = bool(required) and has_answer and has_citations and all(normalize(p) in actual for p in required)
+            passed = passed and all(normalize(p) not in actual for p in case.forbidden_phrases)
+            passed = passed and set(case.expected_documents).issubset(cited_docs)
+        metrics['expected_abstention'] = float(expected_abstention)
+        metrics['expert_approved'] = float(case.expert_approved)
 
         metric_list = [
             MetricValue(name=k, value=v, description=k.replace("_", " ").title())
             for k, v in metrics.items()
         ]
 
-        failure = None
+        failure = None if passed else FailureCategory.WRONG_GENERATION
         if not passed:
             if not has_answer:
                 failure = FailureCategory.WRONG_GENERATION
@@ -230,17 +244,19 @@ class ParserEvaluator:
     def evaluate(self, case: BenchmarkCase) -> EvaluationResult:
         """Evaluate parser quality (stub).
 
-        Returns a passing result since parser evaluation requires
+        Returns a failed, not-evaluated result because parser evaluation requires
         document-level ground truth that is not part of standard
         benchmark cases.
         """
         return EvaluationResult(
             case_id=case.id,
-            passed=True,
+            passed=False,
+            failure_category=FailureCategory.PARSER_ERROR,
+            failure_detail='Not evaluated: document-level ground truth is required.',
             retrieval_metrics=EvaluationMetric(
                 component="parser",
                 metrics=[
-                    MetricValue(name="parser_available", value=1.0,
+                    MetricValue(name="parser_evaluated", value=0.0,
                                 description="Parser evaluation requires document ground truth"),
                 ],
             ),
@@ -280,6 +296,7 @@ class PipelineEvaluator:
 
         # Run generation evaluation (includes citation)
         generation_result = self.generation.evaluate(case)
+        citation_result = self.citation.evaluate(case) if case.evaluation.get('citation', True) and not case.expected_abstention else None
 
         elapsed_ms = (time.time() - start) * 1000
 
@@ -295,6 +312,9 @@ class PipelineEvaluator:
             passed = False
             failures.append(f"Generation: {generation_result.failure_detail}")
 
+        if citation_result is not None and not citation_result.passed:
+            passed = False
+            failures.append(f'Citation: {citation_result.failure_detail}')
         # Determine primary failure category
         failure_category = None
         if not passed:
@@ -302,12 +322,14 @@ class PipelineEvaluator:
                 failure_category = retrieval_result.failure_category
             elif generation_result.failure_category:
                 failure_category = generation_result.failure_category
+            elif citation_result is not None:
+                failure_category = citation_result.failure_category
 
         return EvaluationResult(
             case_id=case.id,
             passed=passed,
             retrieval_metrics=retrieval_result.retrieval_metrics,
-            citation_metrics=retrieval_result.citation_metrics,
+            citation_metrics=citation_result.citation_metrics if citation_result else None,
             generation_metrics=generation_result.generation_metrics,
             failure_category=failure_category,
             failure_detail="; ".join(failures) if failures else None,

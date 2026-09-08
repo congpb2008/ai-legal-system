@@ -209,6 +209,6 @@ class HealthStatus:
     """
 
     status: str = "healthy"
-    version: str = "0.1.0"
+    version: str = "0.2.0"
     uptime_seconds: float = 0.0
     checks: dict[str, str] = field(default_factory=dict)

@@ -28,6 +28,8 @@ COPY pyproject.toml README.md ./
 COPY requirements.lock ./
 RUN pip install --no-cache-dir -r requirements.lock
 COPY backend/ ./backend/
+COPY frontend/ ./frontend/
+COPY design/ ./design/
 
 # The lock supplies all runtime dependencies.  Installing with --no-deps keeps
 # the image repeatable even though pyproject.toml retains its compatibility
@@ -40,13 +42,12 @@ RUN pip install --no-cache-dir --no-deps .
 FROM python:3.12-slim-bookworm AS runtime
 
 LABEL maintainer="Legal Knowledge Platform Team"
-LABEL version="0.1.0"
+LABEL version="0.2.0"
 LABEL description="Legal Knowledge Platform — Evidence-Grounded Legal Q&A"
 
 # Install system runtime requirements (poppler for PDF rendering, tesseract for OCR, curl for healthcheck)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    poppler-utils \
-    tesseract-ocr \
+        tesseract-ocr \
     tesseract-ocr-vie \
     util-linux \
     curl \

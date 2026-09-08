@@ -90,6 +90,12 @@ class DocumentRegistry:
             )
             """
         )
+        self.repo.conn.execute("""CREATE TABLE IF NOT EXISTS document_source_version (
+            document_id TEXT NOT NULL REFERENCES document(id) ON DELETE CASCADE,
+            version_id TEXT NOT NULL, storage_ref TEXT NOT NULL, filename TEXT NOT NULL,
+            mime_type TEXT NOT NULL, size_bytes INTEGER NOT NULL, checksum_sha256 TEXT NOT NULL,
+            uploaded_by TEXT NOT NULL, PRIMARY KEY(document_id, version_id))""")
+        self.repo.conn.execute("INSERT OR IGNORE INTO document_source_version SELECT * FROM document_source WHERE version_id != ''")
         # Preserve legacy opaque source references. Rich metadata is populated
         # for all new uploads and legacy rows remain readable/reprocessable.
         self.repo.conn.execute(
@@ -191,7 +197,7 @@ class DocumentRegistry:
                 """,
                 (
                     str(doc.id),
-                    str(doc.versions[0].version_id),
+                    str(doc.current_version.version_id),
                     source_storage_ref,
                     source_filename or "",
                     source_mime_type or "application/octet-stream",
@@ -200,6 +206,7 @@ class DocumentRegistry:
                     source_uploaded_by or user_id,
                 ),
             )
+            self.repo.conn.execute("INSERT OR IGNORE INTO document_source_version SELECT * FROM document_source WHERE document_id=?", (str(doc.id),))
             # Keep the former lookup populated for backward compatibility with
             # older tools while the rich table is authoritative.
             self.repo.conn.execute(
@@ -213,7 +220,7 @@ class DocumentRegistry:
             self.repo.add_checksum(
                 checksum_sha256=source_checksum_sha256,
                 document_id=doc.id,
-                version_id=doc.versions[0].version_id,
+                version_id=doc.current_version.version_id,
                 filename=source_filename,
                 uploaded_at=doc.created_at,
             )
@@ -241,7 +248,7 @@ class DocumentRegistry:
                 "type": doc.type.value,
                 "vault_id": str(doc.vault_id),
                 "document_number": doc.document_number,
-                "version_id": str(doc.versions[0].version_id),
+                "version_id": str(doc.current_version.version_id),
                 "source_checksum": source_checksum_sha256,
             },
         )
@@ -262,27 +269,20 @@ class DocumentRegistry:
         ).fetchone()
         return row[0] if row else None
 
-    def get_source_metadata(self, document_id: UUID) -> "dict[str, Any] | None":
-        """Return non-secret immutable source metadata without a physical path."""
-        row = self.repo.conn.execute(
-            "SELECT * FROM document_source WHERE document_id = ?",
-            (str(document_id),),
-        ).fetchone()
-        if row is None:
-            storage_ref = self.get_source_storage_ref(document_id)
-            if storage_ref is None:
-                return None
-            return {
-                "document_id": str(document_id),
-                "version_id": "",
-                "storage_ref": storage_ref,
-                "filename": "",
-                "mime_type": "application/octet-stream",
-                "size_bytes": 0,
-                "checksum_sha256": "",
-                "uploaded_by": "",
-            }
-        return dict(row)
+    def get_source_metadata(self, document_id: UUID, version_id=None):
+        if version_id is not None:
+            row = self.repo.conn.execute("SELECT * FROM document_source_version WHERE document_id=? AND version_id=?", (str(document_id), str(version_id))).fetchone()
+        else:
+            row = self.repo.conn.execute("SELECT * FROM document_source WHERE document_id=?", (str(document_id),)).fetchone()
+        return dict(row) if row else None
+
+    def save_version_source(self, document_id, version_id, stored, user_id, filename):
+        values = (str(document_id), str(version_id), stored.storage_ref, filename, stored.mime_type, stored.size_bytes, stored.checksum_sha256, user_id)
+        self.repo.conn.execute("INSERT INTO document_source_version VALUES (?,?,?,?,?,?,?,?)", values)
+        self.repo.conn.execute("INSERT OR REPLACE INTO document_source VALUES (?,?,?,?,?,?,?,?)", values)
+        self.repo.conn.execute("INSERT OR REPLACE INTO doc_source_refs VALUES (?, 'main', ?)", (str(document_id), stored.storage_ref))
+        self.repo.conn.commit()
+        self.repo.add_checksum(checksum_sha256=stored.checksum_sha256, document_id=document_id, version_id=version_id, filename=filename, uploaded_at=now_utc())
 
     # ------------------------------------------------------------------
     # Read

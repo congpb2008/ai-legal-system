@@ -318,6 +318,28 @@ class OllamaEmbeddingEngine:
 # ---------------------------------------------------------------------------
 
 
+class LocalKeywordEmbedder:
+    """Lexical feature hashing for offline ingestion; never labelled semantic AI."""
+    MODEL_NAME = 'local-keyword'
+    MODEL_VERSION = '1'
+    DIMENSION = 384
+
+    def embed(self, text):
+        import re
+        vector = [0.0] * self.DIMENSION
+        for token in re.findall(r'\w+', text.lower()):
+            key = hashlib.sha256(token.encode()).digest()
+            vector[int.from_bytes(key[:4], 'big') % self.DIMENSION] += 1.0
+        length = sum(v*v for v in vector) ** 0.5
+        return [v / length for v in vector] if length else vector
+
+    def embed_batch(self, texts):
+        return [self.embed(t) for t in texts]
+
+    def verify_configuration(self):
+        return None
+
+
 class PlaceholderEmbedder:
     """Deterministic hash-based embedder for MVP development.
 

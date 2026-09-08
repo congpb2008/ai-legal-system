@@ -1,48 +1,30 @@
-"""Platform API HTTP server (tasks/014-api.md).
+"""HTTP routes and shared services for the Cheroot WSGI application.
 
-
-
-Exposes all platform capabilities through a RESTful HTTP API using Python's
-
-stdlib ``http.server``. This is a development/MVP server; a production
-
-deployment should use a proper ASGI/WSGI server (uvicorn, gunicorn, etc.).
-
-
-
-The server is stateless, versioned (/v1), JSON-based, and contract-driven.
-
-It also serves the Web UI (Task 015) static files from the ``frontend/``
-
-directory.
-
+The legacy request-handler class remains a route adapter for compatibility.
+Production traffic enters through the bounded WebApplication WSGI boundary.
 """
 
-
-
 from __future__ import annotations
-
-
 
 import json
 
 import mimetypes
 
 import os
+import threading
 
 import traceback
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from socketserver import ThreadingMixIn
+from legal_platform.paths import asset_root
 
 from pathlib import Path
 
 from typing import Any, Optional
 
 from urllib.parse import urlparse, parse_qs
-
-
 
 from legal_platform.api.handlers import (
 
@@ -68,21 +50,13 @@ from legal_platform.api.handlers import (
 
 from legal_platform.api.models import ApiError, ApiResponse, ErrorCategory
 
-
-
 # Path to the frontend static files
 
-_FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent.parent / "frontend"
-
-
-
-
+_FRONTEND_DIR = asset_root() / "frontend"
 
 class _RequestHandler(BaseHTTPRequestHandler):
 
     """HTTP request handler that routes to API domain handlers or serves static files."""
-
-
 
     # Shared handler instances (set by create_app)
 
@@ -104,15 +78,11 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
     setup_handler: SetupHandler = SetupHandler()
 
-
-
     # ------------------------------------------------------------------
 
     # Routing
 
     # ------------------------------------------------------------------
-
-
 
     def _route(self, method: str) -> None:
 
@@ -124,8 +94,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
 
-
-
         # Operational probes are available at their conventional root paths
         # as advertised by startup output, while /api/* aliases remain
         # backward compatible for the Web UI client.
@@ -136,8 +104,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
             return
         else:
             api_path = path[len("/api"):] or "/"
-
-
 
         # Read body for POST/PATCH/PUT
 
@@ -191,13 +157,9 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                             return
 
-
-
         # Extract auth token
 
         token = self._get_token()
-
-
 
         try:
 
@@ -223,11 +185,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             )
 
-
-
         self._send_response(response)
-
-
 
     def _dispatch(
 
@@ -247,8 +205,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         """Dispatch a request to the appropriate handler method."""
 
-
-
         # --- Health (no auth required) ---
 
         if path in ("/health",):
@@ -262,8 +218,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
         if path in ("/live",):
 
             return self.health_handler.live()
-
-
 
         # --- Auth (no auth required) ---
 
@@ -279,33 +233,18 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return self.auth_handler.me(token)
 
-
-
         # --- Setup (status is public; configuration is public only on first run) ---
 
         if path == "/v1/setup/status" and method == "GET":
 
             return self.setup_handler.status()
 
-        if path.startswith("/v1/setup/") and not self.setup_handler.is_first_run():
-
-            if self.auth_handler.resolve_user(token) is None:
-
-                return ApiResponse.err_response(
-
-                    ApiError(
-
-                        code="NOT_AUTHENTICATED",
-
-                        message="Authentication is required to change configured AI settings.",
-
-                        category=ErrorCategory.AUTHENTICATION,
-
-                    ),
-
-                    status=401,
-
-                )
+        if path.startswith("/v1/setup/"):
+            actor = self.auth_handler.resolve_user(token)
+            if actor is None:
+                return self.auth_handler.error('Please sign in.', 401, 'NOT_AUTHENTICATED')
+            if not self.auth_handler.is_admin(actor):
+                return self.auth_handler.error('Only an administrator can change server settings.', 403)
 
         if path == "/v1/setup/config" and method == "GET":
 
@@ -322,8 +261,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
         if path == "/v1/setup/complete" and method == "POST":
 
             return self.setup_handler.complete()
-
-
 
         # All remaining endpoints require authentication
 
@@ -346,8 +283,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
                 status=401,
 
             )
-
-
 
         # --- Vaults ---
 
@@ -376,8 +311,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
             vault_id = path[len("/v1/vaults/"):]
 
             return self.vault_handler.delete_vault(vault_id, user_id)
-
-
 
         # --- Documents ---
 
@@ -419,8 +352,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return self.document_handler.delete_document(doc_id, user_id)
 
-
-
         # --- Uploads ---
 
         if path == "/v1/uploads" and method == "POST":
@@ -432,8 +363,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
             doc_id = path[len("/v1/uploads/"):]
 
             return self.upload_handler.get_upload_status(doc_id, user_id)
-
-
 
         # --- Search ---
 
@@ -453,15 +382,11 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return self.search_handler.search_hybrid(body, user_id)
 
-
-
         # --- Answers ---
 
         if path == "/v1/answers" and method == "POST":
 
             return self.answer_handler.answer(body, user_id)
-
-
 
         # --- Admin ---
 
@@ -470,7 +395,8 @@ class _RequestHandler(BaseHTTPRequestHandler):
             return self.admin_handler.list_jobs(params, user_id)
 
         if path == "/v1/system" and method == "GET":
-
+            if not self.auth_handler.is_admin(user_id):
+                return self.auth_handler.error('Administrator access required.', 403)
             return self.admin_handler.get_system_info(user_id)
 
         if path == "/v1/reindex" and method == "POST":
@@ -493,8 +419,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return self.admin_handler.process_document(body, user_id)
 
-
-
         # --- 404 ---
 
         return ApiResponse.err_response(
@@ -513,45 +437,31 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         )
 
-
-
     # ------------------------------------------------------------------
 
     # HTTP method handlers
 
     # ------------------------------------------------------------------
 
-
-
     def do_GET(self) -> None:
 
         self._route("GET")
-
-
 
     def do_POST(self) -> None:
 
         self._route("POST")
 
-
-
     def do_PATCH(self) -> None:
 
         self._route("PATCH")
-
-
 
     def do_DELETE(self) -> None:
 
         self._route("DELETE")
 
-
-
     def do_PUT(self) -> None:
 
         self._route("PUT")
-
-
 
     # ------------------------------------------------------------------
 
@@ -559,21 +469,15 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
     # ------------------------------------------------------------------
 
-
-
     def _parse_multipart_formdata(self, raw: bytes, content_type: str) -> dict[str, Any]:
 
         """Parse multipart/form-data request body.
-
-
 
         Args:
 
             raw: Raw request body bytes.
 
             content_type: Content-Type header value.
-
-
 
         Returns:
 
@@ -589,19 +493,13 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         boundary = content_type.split("boundary=")[1].strip().encode()
 
-
-
         result: dict[str, Any] = {}
-
-
 
         # Split into parts by boundary delimiter
 
         delimiter = b"--" + boundary
 
         parts = raw.split(delimiter)
-
-
 
         for part in parts:
 
@@ -611,15 +509,11 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                 continue
 
-
-
             # Strip leading CRLF that follows the boundary
 
             if part.startswith(b"\r\n"):
 
                 part = part[2:]
-
-
 
             # Find end of headers
 
@@ -629,13 +523,9 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                 continue
 
-
-
             headers_raw = part[:header_end]
 
             body_content = part[header_end + 4:]
-
-
 
             # Strip trailing CRLF that precedes the closing boundary
 
@@ -643,11 +533,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                 body_content = body_content[:-2]
 
-
-
             headers = headers_raw.decode('utf-8', errors='ignore')
-
-
 
             # Parse Content-Disposition
 
@@ -659,13 +545,9 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                     cd_line = line
 
-
-
             if not cd_line:
 
                 continue
-
-
 
             params = {}
 
@@ -679,11 +561,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                     params[key.strip().lower()] = value.strip().strip('"')
 
-
-
             field_name = params.get("name", "")
-
-
 
             # Store filename separately for file parts
 
@@ -699,11 +577,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
                 result[field_name] = body_content.decode('utf-8', errors='ignore')
 
-
-
         return result
-
-
 
     def _get_token(self) -> Optional[str]:
 
@@ -716,8 +590,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
             return auth[len("Bearer "):]
 
         return None
-
-
 
     def _send_response(self, response: ApiResponse) -> None:
 
@@ -751,8 +623,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(payload.encode("utf-8"))
 
-
-
     def _send_error(self, error: ApiError, *, status: int) -> None:
 
         """Send an error response."""
@@ -761,13 +631,9 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         self._send_response(response)
 
-
-
     def _serve_static(self, path: str) -> None:
 
         """Serve a static file from the frontend directory.
-
-
 
         Args:
 
@@ -780,8 +646,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
         if path == "" or path == "/":
 
             path = "/index.html"
-
-
 
         # Resolve the file path (prevent directory traversal)
 
@@ -809,8 +673,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return
 
-
-
         if not abs_path.is_file():
 
             # SPA fallback: serve index.html for unknown routes
@@ -835,11 +697,7 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return
 
-
-
         self._send_static_file(abs_path)
-
-
 
     def _send_static_file(self, file_path: Path) -> None:
 
@@ -850,8 +708,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
         if mime_type is None:
 
             mime_type = "application/octet-stream"
-
-
 
         try:
 
@@ -871,8 +727,6 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
             return
 
-
-
         self.send_response(200)
 
         self.send_header("Content-Type", mime_type)
@@ -889,29 +743,19 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         self.wfile.write(content)
 
-
-
     def log_message(self, format: str, *args: Any) -> None:
 
         """Suppress default HTTP log output (use structured logging instead)."""
 
         pass
 
-
-
-
-
 class PlatformAPI:
 
     """The Platform API server.
 
-
-
     Wraps an HTTPServer with all platform handlers wired in.
 
     """
-
-
 
     def __init__(
 
@@ -928,12 +772,11 @@ class PlatformAPI:
         self.port = port
 
         self._server: Optional[HTTPServer] = None
+        self._configuration_lock = threading.RLock()
 
         # Create a single shared, persistent runtime graph.
 
         self._init_shared_deps()
-
-
 
     def _init_shared_deps(self) -> None:
 
@@ -964,16 +807,14 @@ class PlatformAPI:
         from legal_platform.modules.citation.service import CitationBuilderService
         from legal_platform.modules.observability.jobs import JobMonitor
 
-
-
         project_root = Path(__file__).resolve().parents[3]
-        data_root = Path(os.environ.get("LEGAL_PLATFORM_DATA_DIR", project_root / "storage")).expanduser().resolve()
+        from legal_platform.paths import data_root as resolve_data_root
+        data_root = resolve_data_root()
         db_path = data_root / "db" / "legal_platform.db"
         db_path.parent.mkdir(parents=True, exist_ok=True)
         from legal_platform.storage.db import connect_thread_local
         self._shared_db = connect_thread_local(db_path)
-
-
+        self._auth = AuthHandler(conn=self._shared_db, data_dir=data_root)
 
         # Create the repository with persistent DB first, then pass it to registry
 
@@ -981,11 +822,14 @@ class PlatformAPI:
 
         self._persistent_repo = SqliteDocumentRepository(conn=self._shared_db)
 
-
-
         self._registry = DocumentRegistry(repo=self._persistent_repo)
         self._jobs = JobMonitor(conn=self._registry.repo.conn)
         self._recovered_jobs = self._jobs.recover_interrupted_jobs()
+        from legal_platform.modules.document_registry.processing import ProcessingState
+        for document in self._registry.list_documents(limit=10000):
+            processing = self._registry.get_processing(document.id)
+            if processing and processing not in (ProcessingState.UPLOADED, ProcessingState.READY, ProcessingState.FAILED, ProcessingState.ARCHIVED):
+                self._registry.transition_processing(document.id, ProcessingState.FAILED, user_id='system', failure_reason='Processing was interrupted by a server restart. Choose Retry to resume.')
         self._vault = VaultService(registry=self._registry, conn=self._registry.repo.conn)
         self._registry.vault = self._vault
         self._upload = UploadService(
@@ -1038,6 +882,10 @@ class PlatformAPI:
         """Build the native Ollama embedder from the coherent runtime config."""
         from legal_platform.modules.embedding.engine import OllamaEmbeddingEngine
 
+        from legal_platform.modules.embedding.engine import LocalKeywordEmbedder
+        from legal_platform.modules.generation.provider import is_configured
+        if not is_configured() and not os.environ.get('LEGAL_PLATFORM_EMBEDDING_BASE_URL'):
+            return LocalKeywordEmbedder()
         return OllamaEmbeddingEngine(
             base_url=os.environ.get(
                 "LEGAL_PLATFORM_EMBEDDING_BASE_URL",
@@ -1049,7 +897,7 @@ class PlatformAPI:
             ),
             model=os.environ.get(
                 "LEGAL_PLATFORM_EMBEDDING_MODEL",
-                OllamaEmbeddingEngine.DEFAULT_MODEL,
+                provider_config.embedding_model,
             ),
             timeout_seconds=float(
                 os.environ.get(
@@ -1061,9 +909,18 @@ class PlatformAPI:
 
     def _refresh_embedding_from_provider_config(self, provider_config) -> None:
         """Apply setup-wizard changes to ingestion/search without a restart."""
-        self._embedding.engine = self._build_embedding_engine(provider_config)
-
-
+        from legal_platform.modules.document_registry.processing import ProcessingState
+        with self._configuration_lock:
+            previous = self._embedding.engine
+            updated = self._build_embedding_engine(provider_config)
+            self._embedding.engine = updated
+            signature = lambda e: (e.MODEL_NAME, e.MODEL_VERSION, e.DIMENSION)
+            if signature(previous) != signature(updated):
+                for document in self._registry.list_documents(limit=10000):
+                    if document.status.value == 'ACTIVE' and self._registry.get_processing(document.id) == ProcessingState.READY:
+                        self._vector_index.delete_document_entries(document.id)
+                        self._registry.requeue_processing(document.id, ProcessingState.UPLOADED, user_id='system', reason='Search mode or model changed')
+                        self._jobs.ensure_pending_job('pipeline', str(document.id))
 
     def _start_processing_worker(self) -> None:
         """Start the background document processing worker."""
@@ -1078,7 +935,7 @@ class PlatformAPI:
             """Process documents that are in UPLOADED state."""
             while not self._worker_stop.is_set():
                 try:
-                    docs = self._registry.list_documents(limit=100)
+                    docs = self._registry.list_documents(limit=10000)
                     pending_docs = []
                     for doc in docs:
                         proc_state = self._registry.get_processing(doc.id)
@@ -1104,7 +961,8 @@ class PlatformAPI:
                             # Another request/worker owns the active claim.
                             continue
                         try:
-                            count = self._pipeline.process(doc_id)
+                            with self._configuration_lock:
+                                count = self._pipeline.process(doc_id)
                             self._jobs.complete_job(job.job_id)
                             print(f"Processed: {doc_obj.title} ({count} index entries)")
                         except Exception as exc:
@@ -1128,14 +986,13 @@ class PlatformAPI:
         self._worker_thread.start()
         print("  X Background processing worker started")
 
-
     def start(self) -> None:
 
         """Start the API server (blocking)."""
 
         handler_cls = create_app(
 
-            auth_handler=AuthHandler(),
+            auth_handler=self._auth,
 
             vault_handler=VaultHandler(vault_service=self._vault),
 
@@ -1166,6 +1023,7 @@ class PlatformAPI:
             answer_handler=AnswerHandler(
 
                 generation_service=self._generation,
+                ocr_service=self._ocr,
 
                 citation_service=self._citation,
 
@@ -1214,43 +1072,27 @@ class PlatformAPI:
 
         )
 
-
-
-        # Use threaded HTTP server to prevent blocking on long operations
-
-        class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-
-            daemon_threads = True
-
-
-
-        self._server = ThreadedHTTPServer((self.host, self.port), handler_cls)
-
-        print(f"Platform API listening on http://{self.host}:{self.port}")
-
-        print(f"  Health:  http://{self.host}:{self.port}/health")
-
-        print(f"  API v1:  http://{self.host}:{self.port}/api/v1/...")
-
-
-
-        # Start background processing worker
-
+        from legal_platform.web import WebApplication
+        from cheroot.wsgi import Server
+        self._application = WebApplication(handler_cls, self)
+        self._server = Server((self.host, self.port), self._application, numthreads=8, max=16,
+                              timeout=30, shutdown_timeout=5, request_queue_size=32)
+        import logging
+        self._server.error_log = lambda message='', level=20, traceback=False: logging.log(level, message, exc_info=traceback)
+        self._server.max_request_body_size = 40 * 1024 * 1024
+        self._server.max_request_header_size = 16 * 1024
+        cert, key = os.environ.get('LEGAL_PLATFORM_TLS_CERT'), os.environ.get('LEGAL_PLATFORM_TLS_KEY')
+        if bool(cert) != bool(key):
+            raise ValueError('Both TLS certificate and key are required.')
+        if cert:
+            from cheroot.ssl.builtin import BuiltinSSLAdapter
+            self._server.ssl_adapter = BuiltinSSLAdapter(cert, key)
         self._start_processing_worker()
-
-
-
+        print(f"Legal Platform: {'https' if cert else 'http'}://{self.host}:{self.port}")
         try:
-
-            self._server.serve_forever()
-
-        except KeyboardInterrupt:
-
-            print("\nShutting down...")
-
-            self._server.server_close()
-
-
+            self._server.start()
+        finally:
+            self._worker_stop.set()
 
     def stop(self) -> None:
 
@@ -1261,20 +1103,15 @@ class PlatformAPI:
 
         if self._server:
 
-            self._server.shutdown()
-
-            self._server.server_close()
+            self._server.stop()
 
         worker = getattr(self, "_worker_thread", None)
         if worker and worker.is_alive():
             worker.join(timeout=5)
 
         if hasattr(self, "_shared_db"):
-            self._shared_db.close()
-
-
-
-
+            if not worker or not worker.is_alive():
+                self._shared_db.close()
 
 def create_app(
 
@@ -1302,11 +1139,7 @@ def create_app(
 
     """Create a configured request handler class with injected dependencies.
 
-
-
     Usage::
-
-
 
         handler_cls = create_app(...)
 
@@ -1316,40 +1149,42 @@ def create_app(
 
     """
 
+    handler_cls = type("InstallationHandlers", (_RequestHandler,), {})
+
     if auth_handler is not None:
 
-        _RequestHandler.auth_handler = auth_handler
+        handler_cls.auth_handler = auth_handler
 
     if vault_handler is not None:
 
-        _RequestHandler.vault_handler = vault_handler
+        handler_cls.vault_handler = vault_handler
 
     if document_handler is not None:
 
-        _RequestHandler.document_handler = document_handler
+        handler_cls.document_handler = document_handler
 
     if upload_handler is not None:
 
-        _RequestHandler.upload_handler = upload_handler
+        handler_cls.upload_handler = upload_handler
 
     if search_handler is not None:
 
-        _RequestHandler.search_handler = search_handler
+        handler_cls.search_handler = search_handler
 
     if answer_handler is not None:
 
-        _RequestHandler.answer_handler = answer_handler
+        handler_cls.answer_handler = answer_handler
 
     if admin_handler is not None:
 
-        _RequestHandler.admin_handler = admin_handler
+        handler_cls.admin_handler = admin_handler
 
     if health_handler is not None:
 
-        _RequestHandler.health_handler = health_handler
+        handler_cls.health_handler = health_handler
 
     if setup_handler is not None:
 
-        _RequestHandler.setup_handler = setup_handler
+        handler_cls.setup_handler = setup_handler
 
-    return _RequestHandler
+    return handler_cls
