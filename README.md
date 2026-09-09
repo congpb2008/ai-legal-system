@@ -19,6 +19,7 @@ See **[Windows quickstart](docs/WINDOWS-QUICKSTART.md)** for accounts, firewall 
 - Create an account with an invitation or request administrator approval; sign in and manage their profile, password and sessions.
 - Create collections and share them with viewers, contributors or managers.
 - Upload PDF/DOCX files individually, in a batch or from a selected folder; see progress, failures and retry controls.
+- Find documents across the whole library by title or number, collection and processing/archive status; browse complete paginated results. Vietnamese title filters work with or without accents.
 - Search a collection or document and filter by recorded effective dates.
 - Ask questions and inspect quotations, source text and original files from the cited version.
 - Save research privately, copy or download answers with references, and record feedback.

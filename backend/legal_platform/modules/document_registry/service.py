@@ -311,6 +311,13 @@ class DocumentRegistry:
     # Update metadata
     # ------------------------------------------------------------------
 
+    def query_catalog(self, **filters):
+        """Return a page and full count after applying the caller's access scope."""
+        return self.repo.query_catalog(**filters)
+
+    def catalog_totals(self, vault_ids):
+        return self.repo.catalog_totals(vault_ids)
+
     def update_metadata(
         self,
         document_id: UUID,

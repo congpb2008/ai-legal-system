@@ -34,6 +34,23 @@ jobs:
           $proxyExecutable = Join-Path $proxyFolder 'caddy.exe'
           Add-Content -Path $env:GITHUB_ENV -Value "LEGAL_PLATFORM_TEST_CADDY=$proxyExecutable"
       - run: python -m pytest --tb=short
+      - uses: actions/setup-node@v4
+        if: runner.os == 'Linux'
+        with:
+          node-version: '22'
+      - name: Verify browser catalog and account transitions
+        if: runner.os == 'Linux'
+        run: |
+          npm install --prefix tests/browser
+          npx --prefix tests/browser playwright install --with-deps chromium
+          npm test --prefix tests/browser
+      - name: Preserve browser evidence
+        if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-verification
+          path: .artifacts/browser-*/
+          retention-days: 7
       - name: Validate hosted Compose configuration
         if: runner.os == 'Linux'
         env:
@@ -64,6 +81,10 @@ jobs:
           Copy-Item docs/MAINTAINER-GUIDE.md dist/LegalLibrary/MAINTAINER-GUIDE.md
           Copy-Item docs/RELEASE-HANDOFF.md dist/LegalLibrary/RELEASE-HANDOFF.md
           Copy-Item docs dist/LegalLibrary/docs -Recurse
+          Set-Content dist/LegalLibrary/MAINTAINER-GUIDE.md '[Open the maintainer guide](docs/MAINTAINER-GUIDE.md).'
+          Set-Content dist/LegalLibrary/RELEASE-HANDOFF.md '[Open the release handoff](docs/RELEASE-HANDOFF.md).'
+          New-Item -ItemType Directory -Force dist/LegalLibrary/tests/browser | Out-Null
+          Copy-Item tests/browser/README.md dist/LegalLibrary/tests/browser/README.md
           Copy-Item 04-decisions dist/LegalLibrary/04-decisions -Recurse
           New-Item -ItemType Directory -Force dist/LegalLibrary/packaging | Out-Null
           Copy-Item packaging/THIRD-PARTY-NOTICES.md dist/LegalLibrary/packaging/THIRD-PARTY-NOTICES.md

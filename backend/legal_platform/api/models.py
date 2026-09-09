@@ -19,6 +19,7 @@ from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from legal_platform.contracts.common import now_utc
+from legal_platform import __version__
 
 
 class ErrorCategory(str, Enum):
@@ -209,6 +210,6 @@ class HealthStatus:
     """
 
     status: str = "healthy"
-    version: str = "0.2.0"
+    version: str = __version__
     uptime_seconds: float = 0.0
     checks: dict[str, str] = field(default_factory=dict)

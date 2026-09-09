@@ -124,6 +124,11 @@ class DocumentRepository(Protocol):
 
     def find_by_checksum(self, checksum_sha256: str) -> list[tuple[UUID, UUID]]: ...
 
+    def query_catalog(self, *, vault_ids: Iterable[UUID], status=None, query='', processing=None,
+                      limit=100, offset=0) -> tuple[list[Document], int]: ...
+
+    def catalog_totals(self, vault_ids: Iterable[UUID]) -> dict[str, int]: ...
+
     def get_processing(self, document_id: UUID) -> Optional[ProcessingState]: ...
 
     def set_processing(
@@ -176,6 +181,9 @@ class SqliteDocumentRepository:
 
     def __init__(self, conn: "sqlite3.Connection | None" = None):
         self._conn = conn or in_memory()
+        # Explicit connections need the same matcher that worker connections register.
+        from legal_platform.storage.db import fold_text
+        self._conn.create_function('legal_fold', 1, fold_text, deterministic=True)
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
 
@@ -306,6 +314,44 @@ class SqliteDocumentRepository:
             (checksum_sha256,),
         )
         return [(UUID(r["document_id"]), UUID(r["version_id"])) for r in rows]
+
+    def query_catalog(self, *, vault_ids, status=None, query='', processing=None, limit=100, offset=0):
+        """Apply access scope and user filters before counting and pagination."""
+        clauses = ['d.vault_id IN (SELECT value FROM json_each(?))']
+        values = [json.dumps([str(value) for value in vault_ids])]
+        if status:
+            clauses.append('d.status = ?')
+            values.append(status.value)
+        if query:
+            clauses.append("instr(legal_fold(d.title || ' ' || COALESCE(d.document_number, '')), legal_fold(?)) > 0")
+            values.append(query)
+        if processing:
+            if processing == 'PROCESSING':
+                clauses.append("d.status = 'ACTIVE' AND COALESCE(p.state, 'UPLOADED') NOT IN ('READY', 'FAILED')")
+            else:
+                clauses.append('p.state = ?')
+                values.append(processing)
+        source = ' FROM document d LEFT JOIN document_processing p ON p.document_id = d.id WHERE ' + ' AND '.join(clauses)
+        total = self._conn.execute('SELECT COUNT(*)' + source, values).fetchone()[0]
+        rows = self._conn.execute('SELECT d.*' + source + ' ORDER BY d.created_at DESC, d.id DESC LIMIT ? OFFSET ?',
+                                  (*values, limit, offset))
+        return [self._doc_from_row(row) for row in rows], total
+
+    def catalog_totals(self, vault_ids):
+        rows = self._conn.execute('''SELECT d.status, p.state, COUNT(*) AS amount
+            FROM document d LEFT JOIN document_processing p ON p.document_id = d.id
+            WHERE d.vault_id IN (SELECT value FROM json_each(?)) GROUP BY d.status, p.state''',
+            (json.dumps([str(value) for value in vault_ids]),))
+        result = dict(total=0, active=0, archived=0, ready=0, failed=0, processing=0)
+        for row in rows:
+            amount = row['amount']
+            result['total'] += amount
+            if row['status'] == 'ARCHIVED':
+                result['archived'] += amount
+            else:
+                result['active'] += amount
+                result[{'READY': 'ready', 'FAILED': 'failed'}.get(row['state'], 'processing')] += amount
+        return result
 
     def get_processing(self, document_id: UUID) -> Optional[ProcessingState]:
         row = self._conn.execute(

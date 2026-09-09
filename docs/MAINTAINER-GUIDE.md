@@ -174,3 +174,28 @@ Service program permissions grant its installing operator read/execute access an
 For hosted HTTPS, read [the deployment recipe](HOSTED-DEPLOYMENT.md). `WebApplication` validates the configured canonical HTTPS origin, preserves browser origin checks and Secure cookies behind a proxy, rejects unrelated Host values, and accepts a single forwarded client IP only from configured proxy peers. The provided standalone Compose file publishes only Caddy and gives it a fixed address on a dedicated network. Ordinary direct/LAN runs leave these settings unset.
 
 Date-only labels are rendered as local calendar dates in the browser rather than UTC instants. This prevents a document date from appearing one day earlier west of UTC; timestamped events still use the user's local timezone.
+
+
+## 0.2.2 catalog and browser state
+
+Catalog filtering and counting now happen in SQLite before pagination. `DocumentRegistry.query_catalog()` requires an explicit accessible collection scope. The repository passes collection UUIDs as a parameterized JSON array to `json_each`, avoiding both a 10,000-document cutoff and a parameter-per-collection limit. Empty scope yields no documents. The count and page use the same conditions, ordered by creation time and ID. Concurrent writes can still change offset pagination between requests; this is not a snapshot export.
+
+`GET /api/v1/documents` accepts `vault_id`, `status` (`ACTIVE` or `ARCHIVED`), `q` (up to 200 characters), `processing` (`READY`, `FAILED`, `PROCESSING`), `limit` (up to 100) and `offset`. A missing processing row counts as queued. `q` matches a literal substring of title or document number, folding case, Unicode accents and Vietnamese đ. `%` and `_` are literal characters, not wildcards. This is a catalog filter, independent of full-text/semantic passage search. `GET /api/v1/documents/summary` returns complete accessible totals: `total`, `active`, `archived`, `ready`, `failed`, `processing`; the last three exclude archived documents. Neither route bypasses collection access checks.
+
+Collection authorization no longer stops at the first 100 collections. The collection list reports the full authorized total and provides `can_upload` and `can_manage`. Document lists provide `can_manage`; document details also provide `can_update` for contributors. These flags guide the browser only: each mutation continues to enforce permissions on the server.
+
+The browser stores document filters and offset in its URL hash, loads all collection pages, and uses summary totals for Overview. Page generations discard stale list/answer responses after navigation. Session changes abort pending requests, increment a separate session generation, clear private cached state and selected files, and prevent an old batch from sending subsequent files under a new account. Batch controls are locked while uploading, and a browser unload warning protects active transfers. An aborted request may already have reached the server; cancellation is not a rollback or a promise to remove accepted files.
+
+Run `tests/test_api.py` for pagination, accent/literal filters, empty/unauthorized scopes, permissions and a catalog beyond 10,000 records. Run the full Python suite for integration coverage. The optional [browser regression runner](../tests/browser/README.md) verifies large libraries, role-specific controls, mobile layout and account/navigation races using its own isolated host. The CI workflow now includes that runner, but remote execution must be confirmed after GitHub publication.
+
+System status totals and all-managed-document reprocessing use the complete authorized catalog as well. Health/system/evaluation version fields now use the package version instead of a stale hardcoded release number. Saved-answer reads also discard responses after navigation. These changes are covered by API and browser checks; the operation still rechecks each document's manager permission before reprocessing it.
+
+## Restoring the exported Git checkpoint
+
+The source ZIP contains the complete implementation. The cumulative `.patch` preserves all three implementation commits and must be applied in a clean checkout at baseline `075d688d54203204c4227b30ecd60fbf82b1fdf1`:
+
+```sh
+git am --keep-cr /path/to/Legal-Library-0.2.2.patch
+```
+
+Keep `--keep-cr`: the older README blobs contain Windows line endings. Plain `git am` strips carriage returns while reading the mail patch and can fail on those README changes. A separate local clone successfully replayed the full export with `--keep-cr`, producing the same source tree. If an earlier attempt failed, run `git am --abort` in that test checkout before retrying. Git needs the maintainer's normal committer identity configured. Do not apply the cumulative patch on top of an existing implementation commit. GitHub publication and remote CI still require restored write access.

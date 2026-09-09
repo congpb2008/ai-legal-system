@@ -21,6 +21,7 @@ import time
 from uuid import UUID
 
 import pytest
+from legal_platform import __version__
 
 from legal_platform.api.handlers import (
     AdminHandler,
@@ -187,7 +188,7 @@ class TestHealthStatus:
     def test_defaults(self):
         hs = HealthStatus()
         assert hs.status == "healthy"
-        assert hs.version == "0.2.0"
+        assert hs.version == __version__
 
 
 # ======================================================================
@@ -330,6 +331,90 @@ class TestVaultHandler:
 # ======================================================================
 # 4. Document Handler
 # ======================================================================
+
+
+class TestCatalogPagination:
+    def test_catalog_has_no_ten_thousand_document_cutoff(self):
+        handler, vault_id = _test_document_handler()
+        created = handler.create_document(dict(title='Seed', document_type='INTERNAL_REGULATION',
+            issuing_authority='Test', vault_id=str(vault_id)), 'admin')
+        assert created.success
+        conn = handler.registry.repo.conn
+        template = dict(conn.execute('SELECT * FROM document').fetchone())
+        columns = list(template)
+        # Bulk synthetic fixtures keep this boundary check fast and independent of ingestion.
+        rows = []
+        for i in range(10005):
+            row = dict(template, id=str(new_id()), title=f'Catalog boundary {i}')
+            rows.append(tuple(row[key] for key in columns))
+        conn.executemany('INSERT INTO document (' + ','.join(columns) + ') VALUES (' +
+                         ','.join('?' for _ in columns) + ')', rows)
+        conn.commit()
+        page = handler.list_documents({'offset': '10000', 'limit': '100'}, 'admin').data
+        assert page.total == 10006 and len(page.items) == 6
+        assert handler.document_summary('admin').data['total'] == 10006
+        admin = AdminHandler(registry=handler.registry, vault_service=handler.vault)
+        assert admin.get_system_info('admin').data['document_count'] == 10006
+        assert admin.get_system_info('stranger').data['document_count'] == 0
+        assert admin.get_system_info('admin').data['version'] == __version__
+
+    def test_filters_counts_and_pages_cover_complete_accessible_catalog(self):
+        handler, vault_id = _test_document_handler()
+        def create(title, vid=vault_id, owner='admin'):
+            result = handler.create_document(dict(title=title, document_type='INTERNAL_REGULATION',
+                issuing_authority='Test', vault_id=str(vid)), owner)
+            assert result.success
+            return result.data['id']
+        target = create('Đấu thầu 100%_policy')
+        for i in range(105):
+            create(f'Policy {i}')
+        private = handler.vault.create_vault(name='Private', vault_type=VaultType.PERSONAL, owner='other')
+        create('Đấu thầu private', private.id, 'other')
+        first = handler.list_documents({}, 'admin').data
+        second = handler.list_documents({'offset': '100'}, 'admin').data
+        assert first.total == second.total == 106
+        assert len(first.items) == 100 and len(second.items) == 6
+        assert not ({d['id'] for d in first.items} & {d['id'] for d in second.items})
+        assert target in {d['id'] for d in second.items}
+        match = handler.list_documents({'q': 'DAU THAU'}, 'admin').data
+        assert match.total == 1 and match.items[0]['id'] == target
+        assert handler.list_documents({'q': '%_'}, 'admin').data.total == 1
+        assert handler.list_documents({'q': 'private'}, 'admin').data.total == 0
+        assert handler.list_documents({'vault_id': str(private.id)}, 'admin').status == 403
+        assert handler.document_summary('admin').data == dict(total=106, active=106, archived=0,
+                                                            ready=0, failed=0, processing=106)
+        assert handler.document_summary('stranger').data['total'] == 0
+        assert handler.list_documents({'processing': 'PROCESSING'}, 'admin').data.total == 106
+        assert handler.list_documents({'processing': 'READY'}, 'admin').data.total == 0
+        assert handler.list_documents({'processing': 'INVALID'}, 'admin').status == 400
+        assert handler.list_documents({'q': 'x' * 201}, 'admin').status == 400
+        assert handler.delete_document(target, 'admin').success
+        assert handler.list_documents({'status': 'ARCHIVED'}, 'admin').data.total == 1
+        assert handler.document_summary('admin').data['archived'] == 1
+        assert handler.list_documents({'processing': 'PROCESSING'}, 'admin').data.total == 105
+
+    def test_collection_permissions_and_authorization_beyond_first_hundred(self):
+        handler, vault_id = _test_document_handler()
+        for i in range(105):
+            handler.vault.create_vault(name=f'Collection {i}', vault_type=VaultType.PERSONAL, owner='admin')
+        vaults = VaultHandler(handler.vault)
+        page = vaults.list_vaults({'offset': '100'}, 'admin').data
+        assert page.total == 106 and len(page.items) == 6
+        assert vault_id in handler.vault.authorized_vault_ids('admin')
+        assert all(v['can_upload'] and v['can_manage'] for v in page.items)
+        handler.vault.add_member(vault_id, 'reader', role='VIEWER')
+        handler.vault.add_member(vault_id, 'editor', role='CONTRIBUTOR')
+        reader = vaults.list_vaults({}, 'reader').data.items[0]
+        editor = vaults.list_vaults({}, 'editor').data.items[0]
+        assert not reader['can_upload'] and not reader['can_manage']
+        assert editor['can_upload'] and not editor['can_manage']
+        created = handler.create_document(dict(title='Shared', document_type='INTERNAL_REGULATION',
+            issuing_authority='Test', vault_id=str(vault_id)), 'admin')
+        assert created.success
+        doc_id = created.data['id']
+        assert handler.get_document(doc_id, 'editor').data['can_update']
+        assert not handler.get_document(doc_id, 'reader').data['can_update']
+        assert not handler.list_documents({}, 'reader').data.items[0]['can_manage']
 
 
 class TestDocumentHandler:

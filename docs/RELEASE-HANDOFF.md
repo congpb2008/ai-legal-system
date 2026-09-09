@@ -1,8 +1,18 @@
-# Release handoff — 0.2.1 operator and hosting update
+# Release handoff — 0.2.2 catalog and account-transition update
 
-Updated 2026-09-08. This is the continuation record for the usable-product implementation, not a declaration that public customer launch is complete.
+Updated 2026-09-09. This is the continuation record for the usable-product implementation, not a declaration that public customer launch is complete.
 
-## Changes since the 0.2.0 checkpoint
+## Changes since the 0.2.1 checkpoint
+
+The preceding tested release is local commit `61b4c2371a9014993ee5508a73e98eaaf162097b`. Version 0.2.2 removes catalog/collection pagination cutoffs, applies title and status filters before counting, adds complete dashboard totals, and aligns browser actions with reader/contributor/manager permissions. Vietnamese title filters ignore accents and case. It also cancels pending work and clears private browser state on session changes, protects active batch uploads, and prevents late answers from replacing another page.
+
+New regression coverage includes catalogs beyond 10,000 documents and collection access beyond 100 collections. A repeatable browser runner covers complete counts, filters, archives, mobile width, role-specific actions and upload/answer races. The current output manifest records final Python, browser and frozen-executable results. Do not substitute the earlier 0.2.1 results below for current verification.
+
+Final local verification: **726 Python tests passed**, including the real Caddy HTTPS journey. The browser runner passed its catalog/permissions/mobile checks and delayed-question, delayed-saved-answer and upload sign-out checks with no JavaScript errors. The Windows 0.2.2 executable passed its actual launcher/PDF self-check, certificate-verified HTTPS setup/sign-in/upload/answer/source journey, catalog summary/filter assertions, version reporting and saved-answer persistence after restart. The source frontend files and packaged frontend files are checked for byte equality before export. Elevated service installation/reboot, Docker/public ACME and a real customer legal benchmark remain unvalidated.
+
+The new Node/Playwright dependencies are test-only. No schema migration or customer-data transformation is required by 0.2.2. Stop the host and make an encrypted backup before replacing the full Windows application folder; retain the existing data folder. No permanent purge capability was added.
+
+## Earlier 0.2.1 operator and hosting work
 
 The earlier local checkpoint is commit `8eec10ac45f13331aa93d9704a23f65343c87821`. Version 0.2.1 adds launcher reconnection and scrolling, operator permissions for service installations, audited host administrator recovery, command-line backup/restore, non-overwriting backup publication, and canonical HTTPS/proxy handling. It includes `docker-compose.hosted.yml` and `docs/HOSTED-DEPLOYMENT.md`. It also fixes date-only display in western time zones.
 
@@ -27,7 +37,7 @@ The latest implementation is saved locally; GitHub publication remains blocked b
 - Added a Windows launcher, HTTPS certificate controls, optional Local Service installation, a scoped LAN firewall action and encrypted backup/restore.
 - Added reproducible Windows packaging, CI, user instructions, architecture and operational documentation. Existing English/Vietnamese prototype guides are marked historical; their detailed content has not all been translated or rewritten.
 
-## Validation at this checkpoint
+## Earlier 0.2.0 validation record
 
 The complete local regression suite passed **713 tests** on Windows/Python 3.12. The final date-field adjustment was followed by **80 passing API and user-journey tests**. New HTTP journeys cover real account lifecycle, document ingestion, answers and source downloads, source-version preservation, access revocation, request protections and authenticated encrypted backup recovery.
 
@@ -46,7 +56,7 @@ The final **0.2.0 executable** repeated the desktop/PDF self-check and certifica
 
 ## First work in the next session
 
-1. Inspect this branch and the draft PR, including CI failures and any new main changes. Preserve the release checkpoint; do not start a second implementation from the old prototype.
+1. Inspect the local branch and any new main changes. GitHub write access previously returned HTTP 403; there is no published draft PR or remote CI result. Once access is restored, publish this branch, create the PR and inspect its CI results. Preserve the release checkpoint; do not start a second implementation from the old prototype.
 2. On a designated clean Windows test machine, extract the full bundle, verify its checksum and runtime, create the administrator, trust the certificate, and test from a second LAN browser.
 3. Exercise service install, start, stop, reboot, upgrade and removal. Confirm Local Service identity, Program Files/data ACLs, Private-profile local-subnet firewall scope and preservation of documents. These actions need Windows administrator access on that test host.
 4. Install Tesseract with Vietnamese/English data and test real mixed PDFs, rotations, empty pages and low-quality scans. Review extracted quotations against originals.

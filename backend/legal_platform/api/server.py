@@ -314,6 +314,9 @@ class _RequestHandler(BaseHTTPRequestHandler):
 
         # --- Documents ---
 
+        if path == '/v1/documents/summary' and method == 'GET':
+            return self.document_handler.document_summary(user_id)
+
         if path == "/v1/documents" and method == "POST":
 
             return self.document_handler.create_document(body, user_id)

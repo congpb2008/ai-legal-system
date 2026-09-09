@@ -1,0 +1,112 @@
+// Starts its own disposable loopback host. No existing customer server is accepted.
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createRequire} from 'node:module';
+import {spawn} from 'node:child_process';
+import {setTimeout as delay} from 'node:timers/promises';
+
+const require=createRequire(import.meta.url);
+const {chromium}=require(process.env.LEGAL_LIBRARY_PLAYWRIGHT_MODULE||'playwright');
+const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+const artifacts=path.join(repo,'.artifacts');await fs.mkdir(artifacts,{recursive:true});
+const output=await fs.mkdtemp(path.join(artifacts,'browser-'));
+const data=path.join(output,'data');
+const host=spawn(process.env.LEGAL_LIBRARY_TEST_PYTHON||'python',[path.join(repo,'tests/browser/host.py'),data],
+ {cwd:repo,windowsHide:true,env:{...process.env,PYTHONPATH:path.join(repo,'backend')},stdio:['ignore','pipe','pipe']});
+let logs='';host.stdout.on('data',b=>logs=(logs+b).slice(-12000));host.stderr.on('data',b=>logs=(logs+b).slice(-12000));
+const exited=new Promise(resolve=>{host.once('exit',resolve);host.once('error',error=>{logs+=error.message;resolve(-1);});});
+let browser;
+const password='Synthetic browser test passphrase 123';
+try{
+ let fixture;
+ for(let attempt=0;attempt<200;attempt++){
+  if(host.exitCode!==null)throw Error('Fixture host exited: '+logs);
+  try{fixture=JSON.parse(await fs.readFile(path.join(data,'fixture.json'),'utf8'));
+   if((await fetch(`http://127.0.0.1:${fixture.port}/health`)).ok)break;
+  }catch{}
+  await delay(100);
+ }
+ assert(fixture,'Fixture host did not start: '+logs);
+ const base=`http://127.0.0.1:${fixture.port}`;
+ browser=await chromium.launch({headless:true,...(process.env.LEGAL_LIBRARY_BROWSER_EXECUTABLE?{executablePath:process.env.LEGAL_LIBRARY_BROWSER_EXECUTABLE}:{})});
+ const context=await browser.newContext({viewport:{width:1440,height:1050},timezoneId:'America/Los_Angeles'});
+ const page=await context.newPage();page.setDefaultTimeout(10000);
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ const login=async username=>{
+  await page.goto(base+'/#/login');await page.getByLabel('Username',{exact:true}).fill(username);
+  await page.getByLabel('Password',{exact:true}).fill(password);
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await page.locator('.stat').first().waitFor();
+ };
+ const logout=async()=>{await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('heading',{name:'Welcome back',exact:true}).waitFor();};
+ const filter=async()=>{await page.getByRole('button',{name:'Apply filters',exact:true}).click();await page.waitForLoadState('networkidle');};
+ const target=()=>page.getByRole('button',{name:'Đấu thầu 100%_policy',exact:true});
+ await login('admin');
+ assert.deepEqual(await page.locator('.stat').allTextContents(),['105','103','1']);
+ await page.getByRole('link',{name:'Documents',exact:true}).click();await page.locator('#document-count').waitFor();
+ assert.match(await page.locator('#document-count').innerText(),/1–100 of 106/);
+ assert.equal(await page.locator('#vault option').count(),104);
+ await page.getByRole('button',{name:'Next',exact:true}).click();await target().waitFor();
+ assert.match(await page.locator('#document-count').innerText(),/101–106 of 106/);
+ await page.getByLabel('Title or document number').fill('dau thau');await filter();
+ assert.match(await page.locator('#document-count').innerText(),/1–1 of 1/);
+ await page.getByLabel('Collection',{exact:true}).selectOption(fixture.vault);await filter();
+ await target().click();await page.getByRole('button',{name:'Archive document',exact:true}).click();
+ await page.getByRole('button',{name:'Archive',exact:true}).click();
+ await page.getByRole('heading',{name:'No matching documents',exact:true}).waitFor();
+ await page.getByLabel('Show',{exact:true}).selectOption('ARCHIVED');await filter();await target().waitFor();
+ await page.screenshot({path:path.join(output,'catalog-desktop.png')});
+ await page.setViewportSize({width:390,height:844});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:path.join(output,'catalog-mobile.png')});
+ await page.setViewportSize({width:1440,height:1050});await logout();
+ await login('reader');await page.getByRole('link',{name:'Collections',exact:true}).click();
+ await page.getByRole('heading',{name:'Procurement policies',exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Sharing',exact:true}).count(),0);
+ await page.goto(base+'/#/upload');await page.getByRole('heading',{name:'Choose a collection you can contribute to',exact:true}).waitFor();
+ await page.goto(base+'/#/documents?view=ARCHIVED');await target().click();
+ assert.equal(await page.getByRole('link',{name:'Ask this document',exact:true}).count(),0);
+ assert.equal(await page.getByRole('button',{name:'Save details',exact:true}).isEnabled(),false);
+ await page.getByRole('button',{name:'Close dialog',exact:true}).click();await logout();
+ await login('editor');await page.goto(base+'/#/documents?view=ARCHIVED');await target().click();
+ assert(await page.getByRole('button',{name:'Save details',exact:true}).isEnabled());
+ assert.equal(await page.getByRole('button',{name:'Restore document',exact:true}).count(),0);
+ await page.getByLabel('Description',{exact:true}).fill('Contributor browser verification');
+ await page.getByRole('button',{name:'Save details',exact:true}).click();
+ await page.getByText('Document details updated.',{exact:true}).waitFor();await logout();
+ await login('admin');await page.goto(base+'/#/ask');
+ await page.getByLabel('Your question',{exact:true}).fill('Synthetic procurement question');
+ let releaseAnswer;const answerGate=new Promise(resolve=>releaseAnswer=resolve);
+ await page.route('**/api/v1/answers',async route=>{const response=await route.fetch();await answerGate;await route.fulfill({response}).catch(()=>{});});
+ await page.getByRole('button',{name:'Find supporting passages',exact:true}).click();
+ await page.getByText('Finding relevant source passages…',{exact:true}).waitFor();
+ await page.getByRole('link',{name:'Search',exact:true}).click();await page.getByLabel('Search terms',{exact:true}).waitFor();
+ releaseAnswer();await page.waitForLoadState('networkidle');assert.equal(await page.locator('#results').innerText(),'');
+ await page.unroute('**/api/v1/answers');
+ await page.getByRole('link',{name:'Saved answers',exact:true}).click();
+ let releaseHistory;const historyGate=new Promise(resolve=>releaseHistory=resolve);
+ await page.route('**/api/v1/history/*',async route=>{const response=await route.fetch();await historyGate;await route.fulfill({response}).catch(()=>{});});
+ await page.getByRole('button',{name:'Synthetic procurement question',exact:true}).click();
+ await page.getByRole('link',{name:'Search',exact:true}).click();await page.getByLabel('Search terms',{exact:true}).waitFor();
+ releaseHistory();await page.waitForLoadState('networkidle');assert.equal(await page.locator('#results').innerText(),'');
+ await page.unroute('**/api/v1/history/*');await page.goto(base+'/#/upload');
+ await page.getByLabel('Save to collection',{exact:true}).selectOption(fixture.vault);
+ await page.getByLabel('Select documents',{exact:true}).setInputFiles(['one','two'].map(name=>({name:name+'.docx',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',buffer:Buffer.from('held synthetic upload')})));
+ let uploadRequests=0,releaseUpload;const uploadGate=new Promise(resolve=>releaseUpload=resolve);
+ await page.route('**/api/v1/uploads',async route=>{uploadRequests++;await uploadGate;await route.abort().catch(()=>{});});
+ await page.getByRole('button',{name:'Upload documents',exact:true}).click();await page.getByText('Uploading…',{exact:true}).waitFor();
+ assert(await page.getByLabel('Select documents',{exact:true}).isDisabled());
+ await logout();releaseUpload();await login('reader');await page.goto(base+'/#/upload');
+ await page.getByRole('heading',{name:'Choose a collection you can contribute to',exact:true}).waitFor();
+ assert.equal(uploadRequests,1);assert.equal(await page.getByText('one.docx',{exact:true}).count(),0);
+ assert.deepEqual(errors,[]);
+ await fs.writeFile(path.join(output,'result.json'),JSON.stringify({passed:true,checks:['complete counts','103 collections','pagination','Vietnamese title filter','archive filter','mobile width','reader permissions','contributor metadata','late answer isolation','late saved-answer isolation','upload sign-out isolation'],consoleErrors:errors},null,2));
+ console.log('Browser regression passed. Evidence: '+output);
+}finally{
+ if(browser)await browser.close();
+ await fs.mkdir(data,{recursive:true});await fs.writeFile(path.join(data,'stop'),'stop');
+ await Promise.race([exited,delay(15000)]);if(host.exitCode===null)host.kill();
+ await fs.writeFile(path.join(output,'host.log'),logs);
+}

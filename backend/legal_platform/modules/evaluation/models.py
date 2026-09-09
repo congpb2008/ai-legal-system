@@ -14,6 +14,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from legal_platform.contracts.common import now_utc, utc_iso
+from legal_platform import __version__
 
 
 class DatasetType(str, Enum):
@@ -249,7 +250,7 @@ class EvaluationReport:
     report_id: str
     suite_name: str = ""
     dataset_name: str = ""
-    system_version: str = "0.2.0"
+    system_version: str = __version__
     executed_at: str = field(default_factory=lambda: utc_iso(now_utc()))
     total_cases: int = 0
     passed_cases: int = 0

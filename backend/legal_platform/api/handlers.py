@@ -28,6 +28,8 @@ from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID, uuid4
 
+from legal_platform import __version__
+
 from legal_platform.api.models import (
     ApiError,
     ApiResponse,
@@ -154,14 +156,17 @@ class VaultHandler:
             vault_type=vt,
             status=vs,
             user_id=user_id,
-            limit=limit,
-            offset=offset,
+            limit=None,
+            offset=0,
         )
         total = len(vaults)
 
         return ApiResponse.ok(
             data=PaginatedResponse(
-                items=[self._vault_to_dict(v) for v in vaults],
+                items=[dict(self._vault_to_dict(v),
+                            can_upload=v.has_permission(user_id, Permission.UPLOAD),
+                            can_manage=v.has_permission(user_id, Permission.MANAGE))
+                       for v in vaults[offset:offset + limit]],
                 total=total,
                 limit=limit,
                 offset=offset,
@@ -449,23 +454,33 @@ class DocumentHandler:
         ):
             return VaultHandler._forbidden(str(requested_vault))
         authorized = set(self.vault.authorized_vault_ids(user_id))
-        all_docs = self.registry.list_documents(
-            vault_id=requested_vault,
+        query = params.get('q', '').strip()
+        processing = params.get('processing') or None
+        if len(query) > 200 or processing not in (None, 'READY', 'FAILED', 'PROCESSING'):
+            return ApiResponse.err_response(ApiError(code='INVALID_FILTER',
+                message='Use a title or document number of up to 200 characters and a valid processing status.',
+                category=ErrorCategory.VALIDATION), status=400)
+        docs, total = self.registry.query_catalog(
+            vault_ids=authorized & {requested_vault} if requested_vault else authorized,
             status=ds,
-            limit=10000,
-            offset=0,
+            query=query, processing=processing,
+            limit=limit,
+            offset=offset,
         )
-        scoped = [doc for doc in all_docs if doc.vault_id in authorized]
-        docs = scoped[offset:offset + limit]
 
         return ApiResponse.ok(
             data=PaginatedResponse(
-                items=[self._doc_to_dict(d) for d in docs],
-                total=len(scoped),
+                items=[dict(self._doc_to_dict(d), can_manage=self.vault.check_permission(
+                    d.vault_id, user_id, Permission.MANAGE)) for d in docs],
+                total=total,
                 limit=limit,
                 offset=offset,
             ),
         )
+
+    def document_summary(self, user_id: str) -> ApiResponse:
+        """Count the complete accessible catalog, without a pagination cap."""
+        return ApiResponse.ok(data=self.registry.catalog_totals(self.vault.authorized_vault_ids(user_id)))
 
     def get_document(self, doc_id: str, user_id: str) -> ApiResponse:
         """GET /v1/documents/{documentId}"""
@@ -489,6 +504,7 @@ class DocumentHandler:
             return forbidden
         payload = self._doc_to_dict(doc)
         payload['can_manage'] = self.vault.check_permission(doc.vault_id, user_id, Permission.MANAGE)
+        payload['can_update'] = self.vault.check_permission(doc.vault_id, user_id, Permission.UPDATE)
         return ApiResponse.ok(data=payload)
 
     def delete_document(self, doc_id: str, user_id: str) -> ApiResponse:
@@ -1434,12 +1450,9 @@ class AdminHandler:
         """GET /v1/system"""
         index_stats = self.vector_index.stats() if hasattr(self.vector_index, 'stats') else {}
         authorized = set(self.vault.authorized_vault_ids(user_id, permission=Permission.READ))
-        document_count = sum(
-            1 for doc in self.registry.list_documents(limit=10000)
-            if doc.vault_id in authorized
-        )
+        document_count = self.registry.catalog_totals(authorized)['total']
         return ApiResponse.ok(data={
-            "version": "0.2.0",
+            "version": __version__,
             "index": index_stats,
             "document_count": document_count,
         })
@@ -1505,10 +1518,8 @@ class AdminHandler:
                 user_id,
                 permission=Permission.MANAGE,
             ))
-            document_ids = [
-                doc.id for doc in self.registry.list_documents(limit=10000)
-                if doc.vault_id in managed_vaults
-            ]
+            documents, _ = self.registry.query_catalog(vault_ids=managed_vaults, limit=-1)
+            document_ids = [doc.id for doc in documents]
 
         completed = []
         failures = []
@@ -1942,7 +1953,7 @@ class HealthHandler:
         checks = self._checks()
         status = HealthStatus(
             status=("degraded" if any(v.startswith("unhealthy") for v in checks.values()) else "healthy"),
-            version="0.2.0",
+            version=__version__,
             uptime_seconds=time.time() - _START_TIME,
             checks=checks,
         )

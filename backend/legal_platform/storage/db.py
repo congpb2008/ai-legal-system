@@ -8,11 +8,19 @@ from __future__ import annotations
 
 import sqlite3
 import threading
+import unicodedata
 from pathlib import Path
+
+
+def fold_text(value):
+    """Case/accent insensitive catalog matching, including Vietnamese đ."""
+    text = str(value or '').casefold().replace('đ', 'd')
+    return ''.join(c for c in unicodedata.normalize('NFKD', text) if not unicodedata.combining(c))
 
 
 def _configure(conn):
     conn.row_factory = sqlite3.Row
+    conn.create_function('legal_fold', 1, fold_text, deterministic=True)
     conn.execute('PRAGMA foreign_keys=ON')
     conn.execute('PRAGMA busy_timeout=5000')
     return conn

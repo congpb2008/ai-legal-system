@@ -117,9 +117,9 @@ class WebApplication:
                 params = {k: v[0] for k, v in parse_qs(env.get('QUERY_STRING', '')).items()}
                 for name in ('limit', 'offset', 'top_k'):
                     if name in body:
-                        body[name] = max(0 if name == 'offset' else 1, min(int(body[name]), 10000 if name == 'offset' else 100))
+                        body[name] = max(0 if name == 'offset' else 1, min(int(body[name]), 2147483647 if name == 'offset' else 100))
                     if name in params:
-                        params[name] = str(max(0 if name == 'offset' else 1, min(int(params[name]), 10000 if name == 'offset' else 100)))
+                        params[name] = str(max(0 if name == 'offset' else 1, min(int(params[name]), 2147483647 if name == 'offset' else 100)))
                 if 'query' in body and (not isinstance(body['query'], str) or len(body['query']) > 4000):
                     raise ValueError('Questions must be text with at most 4,000 characters.')
                 if api_path == '/v1/uploads' and method == 'POST':

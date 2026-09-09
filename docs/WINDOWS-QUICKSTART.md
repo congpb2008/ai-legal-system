@@ -82,3 +82,12 @@ For service recovery, have the host administrator stop the service and put the v
 | Service upgrade | Back up, stop the service, and have the Windows administrator replace the program folder contents with the new complete package. Keep the data folder. Start and verify the library before deleting the previous package. |
 
 The launcher’s **Open data folder** button gives access to `logs/server.log`. Logs rotate automatically. Back up before changing the data folder or replacing an installation.
+
+
+## Finding and managing documents (0.2.2)
+
+Open **Documents**, choose a collection, enter part of the title or document number, and choose **Apply filters**. The search covers all accessible documents, including later pages. Vietnamese titles also match when you omit accents. **Show** switches between active, ready, needs attention, processing, archived and all documents. **Clear filters** returns to active documents. Previous/Next preserves your filters; applying new filters starts at the first page. Overview counts cover the entire library you can access.
+
+Readers can inspect documents and original sources. Contributors can upload and edit document details. Managers can also share access, retry processing, replace versions, archive and restore. A missing action usually means your collection role does not allow it. Ask the collection owner to change your access if needed. New collections belong to their creator until shared.
+
+The upload page offers only collections you can contribute to. While a batch is uploading, its file selection and settings are locked. You may browse other pages in this library; keep the browser open until transfer finishes. The browser warns before closing a tab during a transfer. Signing out cancels remaining transfers and clears pending files. Anything the server already accepted can continue processing; check Documents before retrying an interrupted upload. No permanent purge operation is added by this release.

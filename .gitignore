@@ -79,3 +79,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Optional browser regression dependencies
+node_modules/
