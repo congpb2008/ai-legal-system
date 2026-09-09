@@ -1,7 +1,7 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmtDate = (value) => value ? new Date(typeof value === 'number' ? value*1000 : value).toLocaleDateString() : 'Not recorded';
+const fmtDate = (value) => { if(!value)return 'Not recorded'; const date=typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)?new Date(...value.split('-').map((n,i)=>Number(n)-(i===1?1:0))):new Date(typeof value==='number'?value*1000:value); return date.toLocaleDateString(); };
 const today = () => new Date().toLocaleDateString('en-CA');
 const list = (data, key) => Array.isArray(data) ? data : data?.[key] || data?.items || [];
 const state = {user:null,status:{},vaults:[],documents:[],answer:null,question:'',uploads:[],epoch:0,timer:null,documentOffset:0,documentTotal:0};

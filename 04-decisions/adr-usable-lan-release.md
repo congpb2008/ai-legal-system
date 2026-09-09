@@ -22,3 +22,10 @@ The prototype described an enterprise legal platform but did not provide a compl
 These decisions supersede earlier descriptions of stub authentication, first-run unauthenticated provider configuration, generated legal answers, confidence-as-correctness and the development HTTP server. Existing domain contracts remain where compatible; the live browser answer response intentionally hides the retrieval-derived confidence percentage and adds date/scope/source-mode information.
 
 Moving to public multi-tenant hosting requires an explicit organization identity boundary, external operational controls, and commercial/privacy/license decisions. A pilot executable does not resolve those requirements. See `docs/MAINTAINER-GUIDE.md` for the implementation map and `docs/RELEASE-HANDOFF.md` for remaining validation.
+
+
+## 0.2.1 follow-up
+
+Support operator recovery of an existing active administrator while the installation is stopped. Host filesystem control is already an explicit trust boundary; recovery preserves account identity/role and records an audit event. Keep this capability off the HTTP API.
+
+Use a configured HTTPS origin and an explicit trusted-proxy address for hosted installations. Never infer the public origin or identity from arbitrary forwarded browser headers. Supply a separate hosted Compose recipe with only its HTTPS proxy published. Preserve the direct LAN deployment defaults.

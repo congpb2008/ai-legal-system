@@ -53,6 +53,8 @@ On Windows, `python -m legal_platform.desktop` starts the control panel. The sou
 
 ## Docker
 
+For a domain with automatic HTTPS, use the separate [hosted deployment recipe](docs/HOSTED-DEPLOYMENT.md) and `docker-compose.hosted.yml`. The basic Compose file below is for local access.
+
 ```sh
 docker compose up --build -d
 docker compose exec legal-platform cat /app/storage/setup-code.txt

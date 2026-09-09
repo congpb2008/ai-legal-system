@@ -42,7 +42,7 @@ RUN pip install --no-cache-dir --no-deps .
 FROM python:3.12-slim-bookworm AS runtime
 
 LABEL maintainer="Legal Knowledge Platform Team"
-LABEL version="0.2.0"
+LABEL version="0.2.1"
 LABEL description="Legal Knowledge Platform — Evidence-Grounded Legal Q&A"
 
 # Install system runtime requirements (poppler for PDF rendering, tesseract for OCR, curl for healthcheck)

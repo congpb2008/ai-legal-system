@@ -25,9 +25,63 @@ def restrict_file(path):
     acl = win32security.ACL()
     for sid in (owner, win32security.CreateWellKnownSid(win32security.WinLocalSystemSid), win32security.CreateWellKnownSid(win32security.WinBuiltinAdministratorsSid)):
         acl.AddAccessAllowedAce(win32security.ACL_REVISION, ntsecuritycon.FILE_ALL_ACCESS, sid)
+    protection = win32security.PROTECTED_DACL_SECURITY_INFORMATION
+    # The service data root grants its installing operator access for backup and
+    # setup. Preserve that inherited grant on files created by Local Service.
+    local_service = win32security.CreateWellKnownSid(win32security.WinLocalServiceSid)
+    if owner == local_service:
+        from legal_platform.windows_service import service_data
+        if Path(path).resolve().is_relative_to(service_data().resolve()):
+            protection = win32security.UNPROTECTED_DACL_SECURITY_INFORMATION
     win32security.SetNamedSecurityInfo(str(path), win32security.SE_FILE_OBJECT,
-        win32security.DACL_SECURITY_INFORMATION | win32security.PROTECTED_DACL_SECURITY_INFORMATION,
+        win32security.DACL_SECURITY_INFORMATION | protection,
         None, None, acl, None)
+
+
+def installation_in_use(root):
+    """Probe the actual OS lock, so stale files never imply a live server."""
+    path = Path(root) / '.server.lock'
+    if not path.exists():
+        return False
+    try:
+        with installation_lock(root):
+            return False
+    except RuntimeError:
+        return True
+
+
+def recover_administrator(root, username, password):
+    """Offline host recovery; never exposed as a web route or a role promotion.
+
+    The host operator already controls this database. Require the server to be
+    stopped, target an existing active admin and record the action atomically.
+    """
+    import time
+    from uuid import uuid4
+    from datetime import datetime, timezone
+    from legal_platform.accounts import digest, password_hash
+    root = Path(root).resolve()
+    database = root / 'db/legal_platform.db'
+    if not database.is_file():
+        raise ValueError('This folder does not contain a library database.')
+    username = str(username).strip().lower()
+    hashed = password_hash(password)
+    with installation_lock(root), contextlib.closing(sqlite3.connect(database)) as conn:
+        with conn:
+            conn.execute('BEGIN IMMEDIATE')
+            account = conn.execute("SELECT id FROM account WHERE username=? AND role='admin' AND state='active'", (username,)).fetchone()
+            if not account:
+                raise ValueError('Enter the username of an existing active administrator. Other accounts cannot be promoted through recovery.')
+            uid = account[0]
+            conn.execute('UPDATE account SET password_hash=?,password_changed_at=? WHERE id=?', (hashed, time.time(), uid))
+            conn.execute('DELETE FROM account_session WHERE user_id=?', (uid,))
+            conn.execute("DELETE FROM account_code WHERE user_id=? AND purpose='reset'", (uid,))
+            conn.execute('DELETE FROM login_throttle WHERE key=?', (digest(username),))
+            conn.execute('INSERT INTO audit_log VALUES (?,?,?,?,?,?,?,?,?,?)', (
+                str(uuid4()), datetime.now(timezone.utc).isoformat(), 'host', 'accounts',
+                'ADMINISTRATOR_RECOVERED', 'account', uid, 'WARNING',
+                'The host operator reset this administrator password while the server was stopped.', '{}'))
+    return username
 
 
 @contextlib.contextmanager
@@ -72,7 +126,8 @@ def backup(root, destination, password):
     destination.parent.mkdir(parents=True, exist_ok=True)
     salt, nonce = os.urandom(16), os.urandom(12)
     key = _key(password, salt)
-    temporary = destination.with_name(destination.name + '.partial')
+    from uuid import uuid4
+    temporary = destination.with_name(destination.name + '.' + uuid4().hex + '.partial')
     try:
         with tempfile.TemporaryDirectory(prefix='legal-backup-') as temp:
             temp = Path(temp)
@@ -106,7 +161,24 @@ def backup(root, destination, password):
                     out.write(encryptor.update(chunk))
                 out.write(encryptor.finalize())
                 out.write(encryptor.tag)
-            temporary.rename(destination)
+            # Publish without replacing a file created by another backup/operator.
+            # Hard links are atomic on local disks; the exclusive-copy fallback
+            # also supports backup destinations on shares without hard-link support.
+            try:
+                os.link(temporary, destination)
+            except FileExistsError:
+                raise ValueError('A backup already exists at that filename.') from None
+            except OSError:
+                owned = False
+                try:
+                    with open(destination, 'xb') as out, open(temporary, 'rb') as source:
+                        owned = True
+                        restrict_file(destination)
+                        shutil.copyfileobj(source, out, 1024 * 1024)
+                except Exception:
+                    if owned:
+                        destination.unlink(missing_ok=True)
+                    raise
     finally:
         temporary.unlink(missing_ok=True)
     return destination

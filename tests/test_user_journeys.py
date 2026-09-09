@@ -182,3 +182,23 @@ def test_grounding_rejects_invented_quote_and_filters_dates():
     assert applicable([e],registry,'2024-12-31')==[]
     assert applicable([e],registry,'2025-06-01')==[e]
     assert applicable([e],registry,'2026-01-01')==[]
+
+
+def test_backup_share_fallback_preserves_other_files(live, tmp_path, isolated_application_data, monkeypatch):
+    from legal_platform import operations
+    _, req, code = live
+    bootstrap(req, code)
+    target = tmp_path / 'shared.legalbackup'
+    other = tmp_path / 'shared.legalbackup.partial'
+    other.write_bytes(b'Another backup in progress')
+    def unsupported_link(*args):
+        raise OSError('This share does not support hard links')
+    monkeypatch.setattr(operations.os, 'link', unsupported_link)
+    operations.backup(isolated_application_data, target, PASSWORD)
+    original = target.read_bytes()
+    with pytest.raises(ValueError, match='never overwritten'):
+        operations.backup(isolated_application_data, target, PASSWORD)
+    assert target.read_bytes() == original
+    assert other.read_bytes() == b'Another backup in progress'
+    restored = operations.restore(target, tmp_path / 'shared-restored', PASSWORD)
+    assert (restored / 'db/legal_platform.db').is_file()

@@ -14,7 +14,8 @@ from email.policy import default
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from pathlib import Path
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
+from ipaddress import ip_address, ip_network
 from uuid import UUID, uuid4
 
 from legal_platform.api.models import ApiResponse
@@ -24,6 +25,15 @@ from legal_platform.paths import asset_root
 
 class WebApplication:
     def __init__(self, handler_cls, platform):
+        self.public_origin = os.environ.get('LEGAL_PLATFORM_PUBLIC_ORIGIN', '').strip().rstrip('/')
+        if self.public_origin:
+            origin = urlsplit(self.public_origin)
+            if origin.scheme != 'https' or not origin.hostname or origin.username or origin.password or origin.path or origin.query or origin.fragment:
+                raise ValueError('LEGAL_PLATFORM_PUBLIC_ORIGIN must be an HTTPS origin, such as https://library.example.com, without a path or credentials.')
+            origin.port  # Validate the optional port before accepting requests.
+            self.public_origin = 'https://' + origin.netloc.lower()
+            self.public_host = origin.netloc.lower()
+        self.trusted_proxies = [ip_network(value.strip(), strict=False) for value in os.environ.get('LEGAL_PLATFORM_TRUSTED_PROXIES', '').split(',') if value.strip()]
         self.router = object.__new__(handler_cls)
         self.platform = platform
         self.auth = self.router.auth_handler
@@ -53,6 +63,18 @@ class WebApplication:
             return False
 
     def __call__(self, env, start_response):
+        env = dict(env)
+        # Trust forwarding only from explicitly configured network peers. The
+        # public origin is an operator setting, never a client-supplied header.
+        try:
+            peer = ip_address(env.get('REMOTE_ADDR', ''))
+            if any(peer in network for network in self.trusted_proxies):
+                forwarded = env.get('HTTP_X_FORWARDED_FOR', '').strip()
+                env['REMOTE_ADDR'] = str(ip_address(forwarded))
+        except ValueError:
+            pass
+        if self.public_origin:
+            env['wsgi.url_scheme'] = 'https'
         path = env.get('PATH_INFO', '/').rstrip('/') or '/'
         method = env.get('REQUEST_METHOD', 'GET')
         api_path = path[4:] if path.startswith('/api/') else path
@@ -70,6 +92,10 @@ class WebApplication:
         uid = self.auth.resolve_user(token)
         status_code, payload, headers = 200, b'', []
         try:
+            if self.public_origin and env.get('HTTP_HOST', '').lower() != self.public_host and api_path not in ('/health', '/ready', '/live'):
+                payload = json.dumps({'success': False, 'error': {'message': 'Open the library at its configured public address.'}}).encode()
+                start_response('421 Misdirected Request', [('Content-Type', 'application/json'), ('Content-Length', str(len(payload))), ('Cache-Control', 'no-store')])
+                return [payload]
             if not path.startswith('/api/') and path not in ('/health', '/ready', '/live'):
                 return self._static(path, method, start_response)
             public = api_path in ('/health', '/ready', '/live', '/v1/setup/status',

@@ -60,18 +60,23 @@ def install(source_data, operator_sid):
         # Ownership and a protected DACL prevent non-administrators modifying service code.
         program.mkdir(parents=True)
         acl = win32security.ACL()
-        for sid, access in [(win32security.CreateWellKnownSid(win32security.WinBuiltinAdministratorsSid), ntsecuritycon.FILE_ALL_ACCESS),
+        administrators = win32security.CreateWellKnownSid(win32security.WinBuiltinAdministratorsSid)
+        operator = win32security.ConvertStringSidToSid(operator_sid)
+        for sid, access in [(administrators, ntsecuritycon.FILE_ALL_ACCESS),
                             (win32security.CreateWellKnownSid(win32security.WinLocalSystemSid), ntsecuritycon.FILE_ALL_ACCESS),
-                            (win32security.CreateWellKnownSid(win32security.WinLocalServiceSid), ntsecuritycon.FILE_GENERIC_READ | ntsecuritycon.FILE_GENERIC_EXECUTE)]:
+                            (win32security.CreateWellKnownSid(win32security.WinLocalServiceSid), ntsecuritycon.FILE_GENERIC_READ | ntsecuritycon.FILE_GENERIC_EXECUTE),
+                            (operator, ntsecuritycon.FILE_GENERIC_READ | ntsecuritycon.FILE_GENERIC_EXECUTE)]:
             acl.AddAccessAllowedAceEx(win32security.ACL_REVISION, 3, access, sid)
-        win32security.SetNamedSecurityInfo(str(program), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION | win32security.PROTECTED_DACL_SECURITY_INFORMATION, None, None, acl, None)
+        win32security.SetNamedSecurityInfo(str(program), win32security.SE_FILE_OBJECT,
+            win32security.DACL_SECURITY_INFORMATION | win32security.PROTECTED_DACL_SECURITY_INFORMATION | win32security.OWNER_SECURITY_INFORMATION,
+            administrators, None, acl, None)
         shutil.copytree(Path(sys.executable).parent, program, dirs_exist_ok=True)
         target.mkdir(parents=True, exist_ok=True)
         data_acl = win32security.ACL()
         for sid in (win32security.CreateWellKnownSid(win32security.WinBuiltinAdministratorsSid), win32security.CreateWellKnownSid(win32security.WinLocalSystemSid), win32security.CreateWellKnownSid(win32security.WinLocalServiceSid), win32security.ConvertStringSidToSid(operator_sid)):
             data_acl.AddAccessAllowedAceEx(win32security.ACL_REVISION, 3, ntsecuritycon.FILE_ALL_ACCESS, sid)
         win32security.SetNamedSecurityInfo(str(target), win32security.SE_FILE_OBJECT, win32security.DACL_SECURITY_INFORMATION | win32security.PROTECTED_DACL_SECURITY_INFORMATION, None, None, data_acl, None)
-        shutil.copytree(source_data, target, dirs_exist_ok=True, ignore=shutil.ignore_patterns('.server.lock','.stop-request','logs'))
+        shutil.copytree(source_data, target, dirs_exist_ok=True, ignore=shutil.ignore_patterns('.server.lock','.stop-request','running-host.json','logs'))
         win32serviceutil.InstallService('legal_platform.windows_service.LibraryService', NAME, 'Legal Library',
             startType=win32service.SERVICE_AUTO_START, userName=r'NT AUTHORITY\LocalService',
             exeName=str(program / Path(sys.executable).name), exeArgs='--service-dispatch',

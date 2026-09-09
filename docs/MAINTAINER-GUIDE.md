@@ -51,6 +51,7 @@ data/
   logs/startup-error.log    frozen-entrypoint failure, if startup could not finish
   .server.lock              process ownership lock, not evidence that a process is alive
   .stop-request             transient request to stop a launcher-owned process
+  running-host.json          launcher connection settings; trusted only while OS lock is held
 ```
 
 The database and original files belong together. A copy of `legal_platform.db` alone is not a complete backup. Generated certificates are host-specific and are not carried into restored installations. No runtime corpus, credentials, data folder or compiled binary should be committed to Git.
@@ -158,3 +159,18 @@ Back up the old installation before switching builds. Schema additions preserve 
 ## Release decisions still owned by the maintainer
 
 Choose the product license and resolve PyMuPDF/MuPDF's licensing for the intended distribution. Obtain a code-signing identity if distributing Windows installers. Set privacy, retention, support, incident-response and availability expectations for customers. A LAN pilot is not a completed public SaaS deployment; public hosting also needs trusted domain HTTPS, monitoring, operational backup policies, capacity testing and an organization-isolation design if sharing one installation among unrelated customers.
+
+
+## 0.2.1 operator and hosted-deployment changes
+
+The launcher now probes the OS installation lock and reads `running-host.json` to reconnect to a running host without owning its original child-process handle. A stale status file never means the server is alive. `stop_host()` sends the existing cooperative stop request. Port, TLS and folder controls are locked while running, the last started data folder is remembered in `launcher-preferences.json` beside the default data folder, and the launcher scrolls on smaller screens. The executable self-check initializes the actual launcher controls as well as the PDF runtime.
+
+Service program permissions grant its installing operator read/execute access and keep the Administrators group as owner. Local Service-created credential files under the protected service data root inherit the operator's data access so setup and backups remain usable. Other protected files retain owner/administrator-only permissions. Test installation, upgrades and actual ACL behavior on a designated elevated Windows host; local unit tests do not replace that deployment check.
+
+`operations.recover_administrator()` requires a stopped library and an existing active administrator. It atomically updates that password, revokes the account's sessions and recovery codes, clears its login throttle and appends an `ADMINISTRATOR_RECOVERED` audit event. It cannot promote or create accounts. It is available through the Windows launcher and `python -m legal_platform.operator recover-admin USERNAME`; there is no web route. This trusts the OS operator who already controls the data folder. Keep two application administrators for routine recovery.
+
+`legal_platform.operator` also exposes encrypted backup and restore commands with private passphrase prompts. Backup publication uses a unique temporary name, never removes another job's partial file, and cannot overwrite an existing backup. Filesystems without hard links use exclusive creation/copy of the completed encrypted archive; callers must wait for the command to finish before copying that final file elsewhere.
+
+For hosted HTTPS, read [the deployment recipe](HOSTED-DEPLOYMENT.md). `WebApplication` validates the configured canonical HTTPS origin, preserves browser origin checks and Secure cookies behind a proxy, rejects unrelated Host values, and accepts a single forwarded client IP only from configured proxy peers. The provided standalone Compose file publishes only Caddy and gives it a fixed address on a dedicated network. Ordinary direct/LAN runs leave these settings unset.
+
+Date-only labels are rendered as local calendar dates in the browser rather than UTC instants. This prevents a document date from appearing one day earlier west of UTC; timestamped events still use the user's local timezone.

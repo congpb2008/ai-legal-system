@@ -32,6 +32,8 @@ Do not forward the port on your Internet router. This release is designed for on
 
 The host must stay powered on and awake. Service installation does not change your sleep settings. Removing the service keeps program files and documents for recovery.
 
+The launcher remembers the last data folder you started. You can close and reopen it to control a running launcher-owned server. Port and folder controls are disabled while that server is running; stop it before changing them. On smaller screens, scroll the launcher to reach all controls.
+
 ## Daily use
 
 **Documents:** upload several files or select a folder. Check the preview, names, collection and optional dates before uploading. Each file is tracked separately; retrying a failed batch skips the files already uploaded. Limits are 25 MB per file and 50 files per batch. The default server document-storage limit is 2 GB.
@@ -45,6 +47,8 @@ The host must stay powered on and awake. Service installation does not change yo
 **Saved answers:** questions and references are saved privately to your account. Copy or download them with references and record feedback. Losing access to a source collection also removes access to saved answers that cite it.
 
 **Accounts:** change your name, email and password and sign out individual sessions from your account page. Administrators approve or disable accounts and create one-use recovery codes. Changing or resetting a password signs out existing sessions. There is no email delivery service to configure: invitations and recovery codes are given to the recipient by the administrator.
+
+If every administrator is locked out, the trusted host operator can stop the server and choose **Recover administrator…** in the launcher. Enter the username of an existing active administrator and a new password. This signs out that account's devices, invalidates its recovery codes and records the recovery. It cannot create or promote an account. Start the server again and sign in. Keep two trusted administrators for ordinary account recovery.
 
 ## Scanned PDFs
 

@@ -2,6 +2,8 @@
 
 ## Current release
 
+- [Hosted HTTPS deployment](HOSTED-DEPLOYMENT.md): domain setup, isolated reverse proxy, Docker operation, command-line backups and host administrator recovery.
+
 - [Windows quickstart](WINDOWS-QUICKSTART.md): installation, LAN access, first administrator, daily use, OCR, backup and recovery.
 - [Maintainer guide](MAINTAINER-GUIDE.md): runtime/data map, security boundaries, API routes, source quotations, concurrency, packaging and testing.
 - [Release handoff](RELEASE-HANDOFF.md): verified behavior, remaining release work and where to resume.

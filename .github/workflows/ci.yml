@@ -21,7 +21,24 @@ jobs:
           cache-dependency-path: requirements*.lock
       - run: python -m pip install -r requirements.lock -r requirements-test.lock
       - run: python -m pip install --no-deps -e .
+      - name: Prepare verified HTTPS proxy for the Windows journey
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $proxyFolder = Join-Path $env:RUNNER_TEMP 'legal-library-caddy'
+          New-Item -ItemType Directory -Force -Path $proxyFolder | Out-Null
+          $proxyArchive = Join-Path $proxyFolder 'caddy.zip'
+          Invoke-WebRequest 'https://github.com/caddyserver/caddy/releases/download/v2.11.2/caddy_2.11.2_windows_amd64.zip' -OutFile $proxyArchive
+          if ((Get-FileHash $proxyArchive -Algorithm SHA256).Hash.ToLower() -ne '2902d2a278597e4983d70ed6d694fcab36b29b0b7d109771c59d7da7147afad8') { throw 'Caddy checksum mismatch' }
+          Expand-Archive -LiteralPath $proxyArchive -DestinationPath $proxyFolder
+          $proxyExecutable = Join-Path $proxyFolder 'caddy.exe'
+          Add-Content -Path $env:GITHUB_ENV -Value "LEGAL_PLATFORM_TEST_CADDY=$proxyExecutable"
       - run: python -m pytest --tb=short
+      - name: Validate hosted Compose configuration
+        if: runner.os == 'Linux'
+        env:
+          LEGAL_PLATFORM_DOMAIN: library.example.test
+        run: docker compose -f docker-compose.hosted.yml config --quiet
   windows-package:
     needs: tests
     runs-on: windows-latest
@@ -46,6 +63,11 @@ jobs:
           Copy-Item packaging/THIRD-PARTY-NOTICES.md dist/LegalLibrary/THIRD-PARTY-NOTICES.md
           Copy-Item docs/MAINTAINER-GUIDE.md dist/LegalLibrary/MAINTAINER-GUIDE.md
           Copy-Item docs/RELEASE-HANDOFF.md dist/LegalLibrary/RELEASE-HANDOFF.md
+          Copy-Item docs dist/LegalLibrary/docs -Recurse
+          Copy-Item 04-decisions dist/LegalLibrary/04-decisions -Recurse
+          New-Item -ItemType Directory -Force dist/LegalLibrary/packaging | Out-Null
+          Copy-Item packaging/THIRD-PARTY-NOTICES.md dist/LegalLibrary/packaging/THIRD-PARTY-NOTICES.md
+          Copy-Item README.md dist/LegalLibrary/README.md
           python packaging/collect_licenses.py dist/LegalLibrary
       - uses: actions/upload-artifact@v4
         with:

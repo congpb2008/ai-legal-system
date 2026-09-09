@@ -1,12 +1,20 @@
-# Release handoff — 0.2.0 LAN pilot
+# Release handoff — 0.2.1 operator and hosting update
 
 Updated 2026-09-08. This is the continuation record for the usable-product implementation, not a declaration that public customer launch is complete.
+
+## Changes since the 0.2.0 checkpoint
+
+The earlier local checkpoint is commit `8eec10ac45f13331aa93d9704a23f65343c87821`. Version 0.2.1 adds launcher reconnection and scrolling, operator permissions for service installations, audited host administrator recovery, command-line backup/restore, non-overwriting backup publication, and canonical HTTPS/proxy handling. It includes `docker-compose.hosted.yml` and `docs/HOSTED-DEPLOYMENT.md`. It also fixes date-only display in western time zones.
+
+A bounded real-Caddy test has passed certificate-verified HTTPS login, secure browser cookies, upload, processing, questions and original-source download. The official Caddy binary's published SHA-256 was checked before use. The Caddyfile passed configuration validation. Docker, real DNS/ACME and elevated Windows service installation still need target-host validation. The complete 0.2.1 regression run passed **723 tests**, including the real proxy journey. Its executable self-check initialized the launcher controls and PDF runtime successfully. The downloadable source revision and final executable smoke result are recorded with the output checkpoint.
+
+The GitHub connection still lacks write access. Preserve the local branch and publish it after that access is available. Do not claim a PR or remote CI exists.
 
 ## Where work stands
 
 Repository: `congpb2008/ai-legal-system`. Working branch: `codex/usable-lan-release`. The implementation starts from main commit `075d688d54203204c4227b30ecd60fbf82b1fdf1`.
 
-The original requested destination was external hosted customers. This increment provides a usable, single-organization LAN pilot and source/Docker deployment paths. It does not isolate unrelated customer organizations in a shared service. The owner also requested a Windows executable, accounts, normal-user workflows and careful documentation, with a clean checkpoint before the account quota becomes low.
+The latest implementation is saved locally; GitHub publication remains blocked by the connection’s write permissions. The original requested destination was external hosted customers. This increment provides a usable, single-organization LAN pilot and source/Docker deployment paths. It does not isolate unrelated customer organizations in a shared service. The owner also requested a Windows executable, accounts, normal-user workflows and careful documentation, with a clean checkpoint before the account quota becomes low.
 
 ## Implemented
 
@@ -27,7 +35,7 @@ A packaged Windows candidate passed its Tk/PDF runtime self-check and an actual 
 
 The final **0.2.0 executable** repeated the desktop/PDF self-check and certificate-verified HTTPS smoke test successfully. A stop/restart check confirmed that the account, certificate and saved answer persisted. The built Python wheel also contains the previously missing storage package, frontend and design assets. Checksums and source revision accompany the downloadable checkpoint. No synthetic test database, setup codes, test credentials, certificates or backups belong in the release package.
 
-**Not yet validated:** a Windows service installation under elevation on a clean machine, reboot recovery, a second LAN computer, actual Tesseract/Vietnamese OCR installation, Docker runtime deployment, a live external model, production load, or a held-out expert legal benchmark. The CI workflow is added; its remote result must be checked on the pull request. Do not describe these checks as passed merely because their code exists.
+**Not yet validated:** a Windows service installation under elevation on a clean machine, reboot recovery, a second LAN computer, actual Tesseract/Vietnamese OCR installation, Docker runtime deployment, a live external model, production load, or a held-out expert legal benchmark. GitHub write access returned HTTP 403 (Resource not accessible by integration); no remote branch or pull request has been created and CI has not run remotely. Do not describe these checks as passed merely because their code exists.
 
 ## Read next
 
@@ -51,7 +59,7 @@ The final **0.2.0 executable** repeated the desktop/PDF self-check and certifica
 
 - **Permanent document deletion is not implemented.** Archiving/restoration works. Automatic approval review rejected the proposed irreversible purge capability because it was not specifically authorized. A separate user question about protected permanent deletion remains pending. Do not interpret subsequent continuation or documentation requests as that approval. If explicitly approved, retain a minimal deletion audit record and explain that backups retain separate copies.
 - Existing prototype owner strings are not automatically mapped to verified accounts. Design a reviewed host-admin migration with a backup and rollback; reusing an old username must not grant ownership.
-- Password recovery and invitations are delivered manually by an administrator. There is no email verification/delivery or sole-administrator recovery UI. Keep two trusted administrators.
+- Password recovery and invitations are delivered manually by an administrator. There is no email verification/delivery. Version 0.2.1 adds host-only recovery for an existing active administrator. Keep two trusted administrators.
 - Windows output is an unsigned onedir bundle, not a signed installer. Keep `_internal` with the executable. Tesseract is optional and external in this Windows build.
 - The live library uses host filesystem protection; backup encryption does not encrypt an unlocked database. Host administrators remain trusted.
 - Search/date metadata is not a comprehensive legal-validity or amendment engine. Saved answers are evidence records, not verified legal opinions.

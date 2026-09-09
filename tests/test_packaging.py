@@ -34,7 +34,9 @@ class TestPackageImport:
     """The package must be importable in a clean environment."""
 
     def test_package_version(self):
-        assert legal_platform.__version__ == "0.2.0"
+        import tomllib
+        project = tomllib.loads((Path(__file__).resolve().parents[1] / 'pyproject.toml').read_text(encoding='utf-8'))
+        assert legal_platform.__version__ == project['project']['version']
 
     def test_api_entrypoint_importable(self):
         # Importing the server module must succeed with no PYTHONPATH hack.

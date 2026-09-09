@@ -33,6 +33,26 @@ def save_settings(root, settings):
     path.write_text(json.dumps(settings, indent=2))
 
 
+def running_host(root):
+    """Return launcher connection settings only while its process holds the lock."""
+    from legal_platform.operations import installation_in_use
+    if not installation_in_use(root):
+        return None
+    try:
+        data = json.loads((Path(root) / 'running-host.json').read_text(encoding='utf-8'))
+        if data.get('controller') == 'launcher' and 1024 <= int(data['port']) <= 65535:
+            return data
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return None
+
+
+def stop_host(root):
+    if not running_host(root):
+        raise ValueError('No launcher-controlled server is running in this folder.')
+    (Path(root) / '.stop-request').write_text('stop', encoding='utf-8')
+
+
 def ensure_certificate(root):
     from cryptography import x509
     from cryptography.x509.oid import NameOID
@@ -65,6 +85,10 @@ def run_server(root, stop_event=None):
     os.environ['LEGAL_PLATFORM_DATA_DIR'] = str(root)
     root.mkdir(parents=True, exist_ok=True)
     with installation_lock(root):
+        from legal_platform.operations import restrict_file
+        for name in ('provider_config.json', 'setup-code.txt', 'tls/server.key'):
+            if (root / name).is_file():
+                restrict_file(root / name)
         (root / 'logs').mkdir(exist_ok=True)
         handler = RotatingFileHandler(root / 'logs/server.log', maxBytes=2*1024*1024, backupCount=3, encoding='utf-8')
         handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
@@ -79,6 +103,8 @@ def run_server(root, stop_event=None):
             os.environ.pop('LEGAL_PLATFORM_TLS_KEY', None)
         from legal_platform.api.server import PlatformAPI
         api = PlatformAPI(host=settings['host'], port=settings['port'])
+        status_path = root / 'running-host.json'
+        status_path.write_text(json.dumps({**settings, 'pid': os.getpid(), 'controller': 'launcher'}), encoding='utf-8')
         request_stop = root / '.stop-request'
         request_stop.unlink(missing_ok=True)
         finished = threading.Event()
@@ -98,5 +124,6 @@ def run_server(root, stop_event=None):
         finally:
             finished.set()
             api.stop()
+            status_path.unlink(missing_ok=True)
             logging.getLogger().removeHandler(handler)
             handler.close()
