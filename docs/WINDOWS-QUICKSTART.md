@@ -52,13 +52,15 @@ If every administrator is locked out, the trusted host operator can stop the ser
 
 ## Scanned PDFs
 
-Text PDFs and Word files work without installing OCR. Scanned PDFs need a Tesseract installation with **Vietnamese and English language data** on the host. The app finds the standard `C:\Program Files\Tesseract-OCR\tesseract.exe` location, or the administrator can set `LEGAL_PLATFORM_TESSERACT` to the executable path. Restart the server after changing this setting and retry the affected document.
+Text PDFs and Word files work without OCR. For scans, open **Server settings → Reading scanned PDFs (OCR)** and choose Tesseract, a vision model, or Tesseract with a vision fallback. Vision OCR has its own model, address and optional API key; you can use it while keeping answers in local mode. Test the settings, save, then retry failed documents.
 
-Use the installation options linked from [Tesseract’s documentation](https://tesseract-ocr.github.io/tessdoc/Installation.html). Mixed PDFs are checked page by page; an unreadable scan is reported instead of quietly omitted. Blank or very short pages may also need manual attention.
+Follow **[Scanned PDFs and Ollama on another computer](OCR-AND-OLLAMA.md)** for Tesseract installation, vision configuration, privacy, limits and troubleshooting. Vision transcriptions may invent or omit text; inspect the original before relying on them.
 
 ## Optional AI
 
 Local mode works immediately and keeps document search on the host. In **Server settings**, an administrator can approve and configure an Ollama-compatible server with a chat model and an embedding model. AI mode sends questions and relevant passages to that destination. The model selects passages, and the server checks the quotations; it does not present generated legal conclusions as verified facts.
+
+For Ollama on another PC, enter its LAN address (for example `http://192.168.1.50:11434/v1`) and enable **Allow this provider on my local network**. Ollama must listen on its network interface; follow the [network setup guide](OCR-AND-OLLAMA.md).
 
 Changing search models queues ready documents to rebuild their search data. If a provider fails, fix its settings or switch back to local mode. No external AI destination or credential is preconfigured.
 

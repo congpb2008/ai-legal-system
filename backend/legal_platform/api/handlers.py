@@ -687,7 +687,7 @@ class DocumentHandler:
             "size_bytes": source.get("size_bytes") or None,
             "checksum_sha256": source.get("checksum_sha256") or None,
             "page_count": ocr_result.total_pages if ocr_result else None,
-            "extraction_warning": "Word page layout is not preserved. These locations refer to extracted text." if ocr_result and ocr_result.engine == "docx-xml" else "For OCR sources, check recognition against the original file.",
+            "extraction_warning": ' '.join(ocr_result.warnings) if ocr_result and ocr_result.engine.startswith('vision:') else "Word page layout is not preserved. These locations refer to extracted text." if ocr_result and ocr_result.engine == "docx-xml" else "For OCR sources, check recognition against the original file.",
             "page": ({
                 "number": page.page_number,
                 "text": page.text,
@@ -2056,6 +2056,10 @@ class SetupHandler:
         }
         """
         config = self._load_config()
+        if "allow_lan" in body:
+            if not isinstance(body["allow_lan"], bool):
+                return AuthHandler.error("LAN access must be enabled or disabled.")
+            config.allow_lan = body["allow_lan"]
 
         # Merge provided fields, preserving existing secrets if not re-supplied
         if "provider_type" in body:
@@ -2108,7 +2112,7 @@ class SetupHandler:
 
         # Validate provider URL for SSRF safety
         from legal_platform.modules.generation.provider import validate_provider_url
-        valid, reason = validate_provider_url(config.base_url)
+        valid, reason = validate_provider_url(config.base_url, allow_lan=config.allow_lan)
         if not valid:
             return ApiResponse.err_response(
                 ApiError(code="VALIDATION_ERROR", message=f"Invalid provider URL: {reason}",
@@ -2129,6 +2133,10 @@ class SetupHandler:
         Body: same shape as save_config (may be partial).
         """
         config = self._load_config()
+        if "allow_lan" in body:
+            if not isinstance(body["allow_lan"], bool):
+                return AuthHandler.error("LAN access must be enabled or disabled.")
+            config.allow_lan = body["allow_lan"]
         if "base_url" in body:
             new_url = str(body['base_url']).strip().rstrip('/')
             if new_url != config.base_url.rstrip('/'):
@@ -2149,7 +2157,7 @@ class SetupHandler:
             )
 
         from legal_platform.modules.generation.provider import validate_provider_url
-        valid, reason = validate_provider_url(config.base_url)
+        valid, reason = validate_provider_url(config.base_url, allow_lan=config.allow_lan)
         if not valid:
             return AuthHandler.error(reason)
         config.timeout_seconds = min(15, max(1, config.timeout_seconds))

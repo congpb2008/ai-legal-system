@@ -41,6 +41,7 @@ data/
   db/legal_platform.db-shm   SQLite shared-memory state while running
   files/                    immutable uploaded originals, addressed by opaque references
   provider_config.json      provider configuration including its credential, if configured
+  ocr_config.json           independent OCR mode/provider/limits and optional credential
   .configured               explicit provider configuration marker
   .local-mode               administrator's local-mode override
   setup-code.txt            first administrator code; removed after successful bootstrap
@@ -192,10 +193,23 @@ System status totals and all-managed-document reprocessing use the complete auth
 
 ## Restoring the exported Git checkpoint
 
-The source ZIP contains the complete implementation. The cumulative `.patch` preserves all three implementation commits and must be applied in a clean checkout at baseline `075d688d54203204c4227b30ecd60fbf82b1fdf1`:
+The source ZIP contains the complete implementation. The cumulative `.patch` preserves all four implementation commits and must be applied in a clean checkout at baseline `075d688d54203204c4227b30ecd60fbf82b1fdf1`:
 
 ```sh
-git am --keep-cr /path/to/Legal-Library-0.2.2.patch
+git am --keep-cr /path/to/Legal-Library-0.2.3.patch
 ```
 
 Keep `--keep-cr`: the older README blobs contain Windows line endings. Plain `git am` strips carriage returns while reading the mail patch and can fail on those README changes. A separate local clone successfully replayed the full export with `--keep-cr`, producing the same source tree. If an earlier attempt failed, run `git am --abort` in that test checkout before retrying. Git needs the maintainer's normal committer identity configured. Do not apply the cumulative patch on top of an existing implementation commit. GitHub publication and remote CI still require restored write access.
+
+
+## 0.2.3 vision OCR and LAN provider connections
+
+Read [the operator guide](OCR-AND-OLLAMA.md) before changing processing destinations. `provider_http.py` owns direct HTTP transport for chat, connectivity checks, native Ollama embeddings and vision OCR. `allow_lan` is an explicit administrator opt-in, persisted independently in provider and OCR configuration. Unsaved answer-provider configuration can also read `LEGAL_PLATFORM_PROVIDER_ALLOW_LAN=1`. URL validation resolves DNS, rejects any disallowed answer, pins the chosen addresses at socket connection time, preserves HTTPS SNI/certificate verification, rejects redirects and bounds response bodies to 8 MiB. No ambient HTTP proxy is used. Never replace this path with unrestricted `urlopen` when adding provider methods.
+
+`modules/ocr_service/config.py` manages `ocr_config.json` without changing `.local-mode`, `.configured` or answer-provider settings. `settings.py` handles administrator-only GET/POST `/api/v1/ocr/config` and POST `/api/v1/ocr/test`. Vision save/test requires explicit consent; the probe sends a generated image. GET masks the key. Destination changes discard the saved key. The configuration uses a unique restricted temporary file and atomic replacement, and is included in encrypted backup/restore. Older releases cannot restore archives containing this new entry; use 0.2.3+.
+
+`ConfiguredImageEngine` snapshots OCR settings once per document. `AutoOcrEngine` chooses pages with fewer than 50 embedded text characters, and combines their recognized results with untouched digital pages using original page numbers. Local fallback is triggered by failure/empty text, not a confidence threshold. Vision output rejects blank/unreadable markers and unfinished completions, but semantic OCR accuracy cannot be proven by these checks. Canonical OCR JSON keeps confidence `null` and explicit provenance warnings for vision output; legacy non-null SQLite convenience columns use a zero sentinel. Consumers must use canonical JSON, not present the sentinel as measured confidence. Source inspection exposes vision warnings and page numbers.
+
+No database schema migration is required. Existing ready documents are not automatically re-extracted by an OCR settings change. Retry failed documents or upload a new immutable source version. Avoid reprocessing a historical version in place: existing citations need stable source text.
+
+Verification includes `tests/test_vision_ocr.py`, the OCR administrator/member and scan-ingestion HTTP journey, encrypted OCR-secret backup/restore, and the browser settings flow. Synthetic HTTP fixtures exercise actual requests but do not establish real model quality, live second-PC connectivity or customer readiness. Review representative scans against originals before enabling a production vision destination.

@@ -267,8 +267,10 @@ class TestSecretMasking:
         else:
             assert _config_path().stat().st_mode & 0o077 == 0
 
-    def test_setup_save_refreshes_runtime_clients(self):
+    def test_setup_save_refreshes_runtime_clients(self, monkeypatch):
         from legal_platform.api.handlers import SetupHandler
+        monkeypatch.setattr('legal_platform.provider_http.socket.getaddrinfo',
+                            lambda *a, **k: [(2, 1, 6, '', ('93.184.216.34', 443))])
 
         refreshed = []
         handler = SetupHandler(on_config_saved=refreshed.append)

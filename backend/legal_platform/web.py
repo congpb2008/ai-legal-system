@@ -218,9 +218,14 @@ class WebApplication:
         a = self.auth
         if path == '/v1/setup/status' and method == 'GET':
             from legal_platform.modules.generation.provider import is_configured
+            from legal_platform.modules.ocr_service.config import load_ocr_config
+            try:
+                ocr_mode = load_ocr_config().mode
+            except ValueError:
+                ocr_mode = 'unavailable'
             return ApiResponse.ok(data={'needs_admin': a.needs_admin(), 'configured': is_configured(),
                 'first_run': a.needs_admin(), 'mode': 'ai' if is_configured() else 'local',
-                'signup': 'approval', 'max_upload_mb': 25})
+                'signup': 'approval', 'max_upload_mb': 25, 'ocr_mode': ocr_mode})
         if path == '/v1/auth/bootstrap' and method == 'POST':
             return a.register(body, bootstrap=True)
         if path == '/v1/auth/signup' and method == 'POST':
@@ -321,6 +326,9 @@ class WebApplication:
             (_data_dir() / '.local-mode').write_text('Local processing enabled by administrator.')
             self.platform._refresh_embedding_from_provider_config(load_config())
             return ApiResponse.ok(data={'message': 'Local mode enabled.'})
+        if path.startswith('/v1/ocr/'):
+            from legal_platform.modules.ocr_service.settings import handle_ocr_settings
+            return handle_ocr_settings(method, path, body, a, uid)
         if path == '/v1/vaults' and method == 'POST':
             body['organization_id'] = a.organization_id
         if path == '/v1/uploads' and method == 'POST' and body.get('replace_document_id'):

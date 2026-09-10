@@ -147,7 +147,7 @@ def backup(root, destination, password):
                     if not file.is_relative_to(root / 'files') or not file.is_file():
                         raise ValueError('An original source is missing; backup was not created.')
                     z.write(file, 'files/' + Path(ref).as_posix())
-                for name in ('provider_config.json', '.configured', '.local-mode'):
+                for name in ('provider_config.json', 'ocr_config.json', '.configured', '.local-mode'):
                     if (root / name).is_file():
                         z.write(root / name, name)
                 z.writestr('manifest.json', json.dumps({'format': 1, 'product': 'Legal Library', 'sessions_restored': False}))
@@ -225,7 +225,7 @@ def restore(archive, destination, password):
             names = set()
             for info in entries:
                 path = Path(info.filename.replace('\\', '/'))
-                if path.is_absolute() or '..' in path.parts or ':' in info.filename or info.filename in names or not (info.filename.startswith('files/') or info.filename in ('db/legal_platform.db','manifest.json','provider_config.json','.configured','.local-mode')):
+                if path.is_absolute() or '..' in path.parts or ':' in info.filename or info.filename in names or not (info.filename.startswith('files/') or info.filename in ('db/legal_platform.db','manifest.json','provider_config.json','ocr_config.json','.configured','.local-mode')):
                     raise ValueError('Backup contains an invalid entry.')
                 names.add(info.filename)
             if 'db/legal_platform.db' not in names:
@@ -239,4 +239,6 @@ def restore(archive, destination, password):
         staged.rename(destination)
         if (destination / 'provider_config.json').exists():
             restrict_file(destination / 'provider_config.json')
+        if (destination / 'ocr_config.json').exists():
+            restrict_file(destination / 'ocr_config.json')
     return destination

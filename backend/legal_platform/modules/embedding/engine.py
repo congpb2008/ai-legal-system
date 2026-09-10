@@ -12,6 +12,8 @@ Available implementations:
 
 from __future__ import annotations
 
+from legal_platform.provider_http import provider_urlopen
+
 import hashlib
 import json
 import os
@@ -139,6 +141,7 @@ class OllamaEmbeddingEngine:
         api_key: str = "",
         timeout_seconds: float = 60.0,
         expected_dimension: "int | None" = None,
+        allow_lan: bool = False,
     ):
         base_url = base_url.strip().rstrip("/")
         if base_url.endswith("/v1"):
@@ -150,6 +153,7 @@ class OllamaEmbeddingEngine:
         if timeout_seconds <= 0:
             raise ValueError("Ollama embedding timeout must be positive")
 
+        self.allow_lan = allow_lan
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
@@ -185,6 +189,7 @@ class OllamaEmbeddingEngine:
             ) from exc
         return cls(
             base_url=base_url,
+            allow_lan=os.environ.get("LEGAL_PLATFORM_PROVIDER_ALLOW_LAN", "").lower() in ("1", "true"),
             model=model,
             api_key=api_key,
             timeout_seconds=timeout,
@@ -283,9 +288,9 @@ class OllamaEmbeddingEngine:
             method="POST" if payload is not None else "GET",
         )
         try:
-            with urllib.request.urlopen(
+            with provider_urlopen(
                 request,
-                timeout=self.timeout_seconds,
+                timeout=self.timeout_seconds, allow_lan=self.allow_lan,
             ) as response:
                 raw = response.read()
         except urllib.error.HTTPError as exc:

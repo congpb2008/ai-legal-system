@@ -890,6 +890,7 @@ class PlatformAPI:
         if not is_configured() and not os.environ.get('LEGAL_PLATFORM_EMBEDDING_BASE_URL'):
             return LocalKeywordEmbedder()
         return OllamaEmbeddingEngine(
+            allow_lan=provider_config.allow_lan,
             base_url=os.environ.get(
                 "LEGAL_PLATFORM_EMBEDDING_BASE_URL",
                 provider_config.base_url,

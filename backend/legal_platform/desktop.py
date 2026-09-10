@@ -194,7 +194,7 @@ def launch(*, self_check=False):
     line.pack(fill='x', pady=5)
     ttk.Button(line,text='Recover administrator…',command=error(recover_admin)).pack(side='left',padx=(0,8))
     ttk.Button(line,text='Remove automatic service…',command=error(remove)).pack(side='left')
-    ttk.Label(frame,text='Text PDFs and Word files work immediately. Scans require Tesseract OCR with Vietnamese language data. Server errors are recorded in the logs folder.',wraplength=680).pack(anchor='w',pady=10)
+    ttk.Label(frame,text='Text PDFs and Word files work immediately. For scans, choose Tesseract or a vision model in Server settings. Server errors are recorded in the logs folder.',wraplength=680).pack(anchor='w',pady=10)
     def refresh():
         installed=service_state()
         active = running_host(directory.get())

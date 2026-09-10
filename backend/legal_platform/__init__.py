@@ -14,4 +14,4 @@ The authoritative source of truth is the specification under ``AI Legal Platform
 This package is the implementation; code follows documentation.
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"

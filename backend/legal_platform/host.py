@@ -86,7 +86,7 @@ def run_server(root, stop_event=None):
     root.mkdir(parents=True, exist_ok=True)
     with installation_lock(root):
         from legal_platform.operations import restrict_file
-        for name in ('provider_config.json', 'setup-code.txt', 'tls/server.key'):
+        for name in ('provider_config.json', 'ocr_config.json', 'setup-code.txt', 'tls/server.key'):
             if (root / name).is_file():
                 restrict_file(root / name)
         (root / 'logs').mkdir(exist_ok=True)

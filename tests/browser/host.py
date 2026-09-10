@@ -52,7 +52,10 @@ for index in range(106):
     app._registry.repo.set_processing(did, state)
 for index in range(101):
     app._vault.create_vault(name=f'Reference collection {index}', vault_type=VaultType.DEPARTMENT, owner=admin)
-(root / 'fixture.json').write_text(json.dumps(dict(port=port, vault=str(vault.id), target=target)), encoding='utf-8')
+from provider_fixture import start_provider
+provider=start_provider()
+(root / 'fixture.json').write_text(json.dumps(dict(port=port, vault=str(vault.id), target=target,
+    provider=f'http://192.168.50.40:{provider.server_port}/v1')), encoding='utf-8')
 
 def stop_when_requested():
     for _ in range(180):
@@ -66,3 +69,4 @@ try:
     app.start()
 finally:
     app.stop()
+    provider.shutdown();provider.server_close()

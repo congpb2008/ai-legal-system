@@ -499,7 +499,11 @@ class AutoOcrEngine:
             return digital_result
         if self._image is None:
             raise OcrEngineError('Some PDF pages have little or no embedded text. Configure image OCR or upload a text PDF; no pages have been silently omitted.')
-        image_result = self._image.extract(content=content, document_id=document_id, version_id=version_id)
+        if hasattr(self._image, 'extract_pages'):
+            image_result = self._image.extract_pages(content=content, page_numbers=low_text,
+                document_id=document_id, version_id=version_id)
+        else:
+            image_result = self._image.extract(content=content, document_id=document_id, version_id=version_id)
         by_page = {p.page_number: p for p in image_result.pages}
         combined = []
         for page in digital_result.pages:

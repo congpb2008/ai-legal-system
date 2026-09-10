@@ -24,7 +24,8 @@ See **[Windows quickstart](docs/WINDOWS-QUICKSTART.md)** for accounts, firewall 
 - Ask questions and inspect quotations, source text and original files from the cited version.
 - Save research privately, copy or download answers with references, and record feedback.
 - Edit document metadata, upload a new version, archive and restore documents.
-- Administer accounts and optionally enable an approved AI provider.
+- Administer accounts and optionally enable an approved AI provider, including Ollama on another LAN computer.
+- Read scanned PDFs with local Tesseract, an independently configured vision model, or an explicit vision fallback. See the [OCR and LAN Ollama guide](docs/OCR-AND-OLLAMA.md).
 - Start and stop a Windows server, manage its service, export its HTTPS certificate, and back up or restore the library.
 
 There are no default accounts or passwords. The first administrator needs a random setup code available only on the host. New signups need approval unless they use a one-time invitation. Password recovery is administered with one-time codes; email delivery is not required.

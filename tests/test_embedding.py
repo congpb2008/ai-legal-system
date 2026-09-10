@@ -142,7 +142,7 @@ class TestOllamaEmbeddingEngine:
     def test_uses_native_api_and_persists_digest(self, monkeypatch):
         requests = []
 
-        def fake_urlopen(request, timeout):
+        def fake_urlopen(request, timeout, **kwargs):
             requests.append((request, timeout))
             if request.full_url.endswith("/api/tags"):
                 return _JsonResponse({
@@ -157,7 +157,7 @@ class TestOllamaEmbeddingEngine:
             }
             return _JsonResponse({"embeddings": [[1, 0, 0], [0, 1, 0]]})
 
-        monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+        monkeypatch.setattr("legal_platform.modules.embedding.engine.provider_urlopen", fake_urlopen)
         engine = OllamaEmbeddingEngine(
             base_url="https://ollama.example/v1",
             model="test-embed:latest",
@@ -179,7 +179,7 @@ class TestOllamaEmbeddingEngine:
 
     def test_missing_model_is_observable(self, monkeypatch):
         monkeypatch.setattr(
-            "urllib.request.urlopen",
+            "legal_platform.modules.embedding.engine.provider_urlopen",
             lambda *_args, **_kwargs: _JsonResponse({"models": []}),
         )
         engine = OllamaEmbeddingEngine(
@@ -190,14 +190,14 @@ class TestOllamaEmbeddingEngine:
             engine.embed("legal text")
 
     def test_dimension_mismatch_is_rejected(self, monkeypatch):
-        def fake_urlopen(request, timeout):
+        def fake_urlopen(request, timeout, **kwargs):
             if request.full_url.endswith("/api/tags"):
                 return _JsonResponse({
                     "models": [{"name": "test:latest", "digest": "digest"}]
                 })
             return _JsonResponse({"embeddings": [[1.0, 2.0]]})
 
-        monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+        monkeypatch.setattr("legal_platform.modules.embedding.engine.provider_urlopen", fake_urlopen)
         engine = OllamaEmbeddingEngine(
             base_url="http://ollama.example",
             model="test:latest",
@@ -210,7 +210,7 @@ class TestOllamaEmbeddingEngine:
         def fail(*_args, **_kwargs):
             raise urllib.error.URLError("private transport detail")
 
-        monkeypatch.setattr("urllib.request.urlopen", fail)
+        monkeypatch.setattr("legal_platform.modules.embedding.engine.provider_urlopen", fail)
         engine = OllamaEmbeddingEngine(
             base_url="http://ollama.example",
             model="test:latest",

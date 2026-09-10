@@ -14,6 +14,8 @@ The Python executable defaults to `python`. Set `LEGAL_LIBRARY_TEST_PYTHON` to t
 
 The test checks complete dashboard counts, collection lists beyond 100, pagination, Vietnamese title matching, archive discovery, mobile width, reader/contributor actions, metadata saves, delayed-answer isolation and sign-out during a held upload batch. Delayed HTTP responses are deliberately controlled in the browser so the race checks are reproducible. The upload cancellation fixture is never forwarded to ingestion.
 
+The settings checks use a synthetic OpenAI/Ollama HTTP fixture. A test-only socket mapping sends the exact simulated LAN address and fixture port to loopback; it never contacts another PC. The runner verifies independent OCR settings/key preservation, the generated image probe, LAN opt-in for OCR and AI, model connection tests, and desktop/mobile settings. The socket mapping is not part of application code.
+
 Evidence is kept under `.artifacts/browser-*/`: desktop/mobile screenshots, `result.json` on success, and `host.log`. The browser and server are stopped in `finally`; the server also has a three-minute maximum lifetime. A failed run exits nonzero and retains its test folder for investigation. This optional Node toolchain does not ship with or run inside the Windows application.
 
 CI runs this flow on Linux after the Python suite. Local Windows verification can use Edge; neither proves elevated Windows service installation, a reboot, certificate trust on a second LAN device, or public HTTPS deployment.

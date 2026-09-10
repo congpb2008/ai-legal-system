@@ -61,6 +61,40 @@ def bootstrap(request,code):
     return data['data']['token'],data['data']['user_id']
 
 
+def test_vision_configuration_permissions_and_scan_ingestion(live):
+    from test_vision_ocr import provider_server, mixed_pdf
+    app,req,code=live
+    token,admin=bootstrap(req,code)
+    assert req('GET','/v1/ocr/config')[0]==401
+    _,created,_=req('POST','/v1/auth/signup',{'username':'ocr-reader','password':PASSWORD})
+    uid=created['data']['account']['id']
+    assert req('PATCH','/v1/accounts/'+uid,{'state':'active'},token)[0]==200
+    _,login,_=req('POST','/v1/auth/login',{'username':'ocr-reader','password':PASSWORD})
+    assert req('GET','/v1/ocr/config',token=login['data']['token'])[0]==403
+    with provider_server() as (url,calls):
+        config={'mode':'vision','base_url':url+'/v1','model':'test-vision','api_key':'synthetic-ocr-secret'}
+        assert req('POST','/v1/ocr/config',config,token)[0]==400
+        config['consent']=True
+        assert req('POST','/v1/ocr/config',config,token)[0]==200
+        _,safe,_=req('GET','/v1/ocr/config',token=token)
+        assert safe['data']['has_api_key'] and 'synthetic-ocr-secret' not in json.dumps(safe)
+        _,status,_=req('GET','/v1/setup/status')
+        assert status['data']['mode']=='local' and status['data']['ocr_mode']=='vision'
+        _,vault,_=req('POST','/v1/vaults',{'name':'Scans','vault_type':'DEPARTMENT'},token)
+        pdf=mixed_pdf()
+        _,upload,_=req('POST','/v1/uploads',{'vault_id':vault['data']['id'],'title':'Scanned policy',
+            'filename':'mixed.pdf','document_type':'INTERNAL_REGULATION','issuing_authority':'Synthetic fixture',
+            'content_base64':base64.b64encode(pdf).decode()},token)
+        did=upload['data']['document_id'];app._pipeline.process(UUID(did),user_id=admin)
+        _,document,_=req('GET','/v1/documents/'+did,token=token)
+        assert document['data']['processing_state']=='READY',document
+        _,source,_=req('GET',f'/v1/documents/{did}/source?page=2&include_original=true',token=token)
+        assert source['data']['page']['number']==2
+        assert 'dự toán' in source['data']['page']['text'] and 'invent' in source['data']['extraction_warning']
+        assert base64.b64decode(source['data']['content_base64'])==pdf
+        assert len(calls)==1
+
+
 def test_accounts_approval_sessions_and_single_use_recovery(live):
     app,req,code=live
     assert req('POST','/v1/auth/login',{'username':'admin','password':'anything'})[0]==401
@@ -151,10 +185,14 @@ def test_encrypted_backup_roundtrip_and_tamper_rejection(live,tmp_path,isolated_
     from legal_platform.operations import backup,restore
     app,req,code=live
     token,uid=bootstrap(req,code)
+    from legal_platform.modules.ocr_service.config import OcrConfig, save_ocr_config
+    save_ocr_config(OcrConfig(mode='vision', model='test-vision', api_key='synthetic-ocr-secret', allow_lan=True))
     archive=backup(isolated_application_data,tmp_path/'library.legalbackup',PASSWORD)
     assert b'Synthetic testing' not in archive.read_bytes()
     with pytest.raises(ValueError):restore(archive,tmp_path/'wrong','wrong password of sufficient length')
     target=restore(archive,tmp_path/'restored',PASSWORD)
+    restored_ocr=json.loads((target/'ocr_config.json').read_text())
+    assert restored_ocr['api_key']=='synthetic-ocr-secret' and restored_ocr['allow_lan'] is True
     from legal_platform.accounts import AuthHandler
     from legal_platform.storage.db import connect_thread_local
     conn=connect_thread_local(target/'db/legal_platform.db')

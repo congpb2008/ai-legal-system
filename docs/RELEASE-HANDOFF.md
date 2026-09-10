@@ -1,8 +1,18 @@
-# Release handoff — 0.2.2 catalog and account-transition update
+# Release handoff — 0.2.3 OCR and LAN providers
 
-Updated 2026-09-09. This is the continuation record for the usable-product implementation, not a declaration that public customer launch is complete.
+Updated 2026-09-10. This is the continuation record for the usable-product implementation, not a declaration that public customer launch is complete.
 
-## Changes since the 0.2.1 checkpoint
+## Changes since 0.2.2
+
+The preceding checkpoint is `ac14400a7ebb41a3d1e7556ad4a0cf817109029d`. The user requested an alternative to unavailable Tesseract and support for Ollama on another LAN computer. Version 0.2.3 adds independent vision OCR settings, a generated-image connection test, Tesseract-first fallback, provider keys, bounded page processing and visible vision provenance. AI search, native embeddings and OCR support explicit LAN opt-in through a shared DNS-pinned, redirect-free transport. The desktop directs scan users to these settings.
+
+Read [OCR and LAN Ollama setup](OCR-AND-OLLAMA.md) for normal-user instructions. OCR configuration and credentials survive encrypted backups. There is no schema migration. Restore new archives containing OCR settings with 0.2.3 or later. Existing local answer search remains local after enabling vision; page images go to the selected OCR destination only under its explicit configuration.
+
+Current verification: **758 Python tests passed**, including real Caddy HTTPS, OCR permission boundaries, synthetic mixed-PDF vision ingestion, unknown-confidence handling, fallback privacy, response/page bounds, LAN chat/embedding requests, DNS rebinding/redirect rejection and encrypted settings restore. Browser controls passed the synthetic vision probe, settings persistence, LAN chat/embedding connection and desktop/mobile checks. The rebuilt Windows 0.2.3 executable passed launcher/PDF initialization, certificate-verified HTTPS account/upload/answer/source/catalog checks, the generated vision-image probe, mixed-PDF vision ingestion, exact original download, OCR key masking and settings/document persistence after restart. Packaged frontend bytes are compared with source before export. Results are recorded in the final release manifest.
+
+The tests use controlled local HTTP providers and synthetic images. No live customer API key, real OCR model or second-PC Ollama server was available for validation. The next operator check is to configure the user's actual Ollama LAN host and installed vision model and compare representative Vietnamese scans with their originals. Existing service/reboot, public deployment, licensing and legal benchmark gates below remain.
+
+## Earlier 0.2.2 catalog and account-transition work
 
 The preceding tested release is local commit `61b4c2371a9014993ee5508a73e98eaaf162097b`. Version 0.2.2 removes catalog/collection pagination cutoffs, applies title and status filters before counting, adds complete dashboard totals, and aligns browser actions with reader/contributor/manager permissions. Vietnamese title filters ignore accents and case. It also cancels pending work and clears private browser state on session changes, protects active batch uploads, and prevents late answers from replacing another page.
 
@@ -59,7 +69,7 @@ The final **0.2.0 executable** repeated the desktop/PDF self-check and certifica
 1. Inspect the local branch and any new main changes. GitHub write access previously returned HTTP 403; there is no published draft PR or remote CI result. Once access is restored, publish this branch, create the PR and inspect its CI results. Preserve the release checkpoint; do not start a second implementation from the old prototype.
 2. On a designated clean Windows test machine, extract the full bundle, verify its checksum and runtime, create the administrator, trust the certificate, and test from a second LAN browser.
 3. Exercise service install, start, stop, reboot, upgrade and removal. Confirm Local Service identity, Program Files/data ACLs, Private-profile local-subnet firewall scope and preservation of documents. These actions need Windows administrator access on that test host.
-4. Install Tesseract with Vietnamese/English data and test real mixed PDFs, rotations, empty pages and low-quality scans. Review extracted quotations against originals.
+4. Follow the OCR/LAN guide to test the actual remote Ollama host and vision model, and/or install Tesseract with Vietnamese/English data. Test real mixed PDFs, rotations, empty pages and low-quality scans. Review extracted quotations against originals.
 5. Restore an encrypted backup to a separate folder/host and verify accounts, source versions, permissions, history, provider settings and revoked old sessions. Never overwrite the only good library.
 6. Run Docker behind trusted HTTPS; validate proxy behavior, request limits, storage persistence, restart and backups. Decide whether public customers get separate installations or a new tested organization-isolation design.
 7. Build the expert-reviewed legal benchmark before claiming answer accuracy. Test dates, exceptions, conflicting sources, missing evidence and document-borne prompt injection. Mock AI tests are not live-provider evidence.
