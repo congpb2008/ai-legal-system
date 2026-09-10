@@ -4,6 +4,8 @@ A shared document library for one organization: upload Vietnamese policies and l
 
 This release makes the existing backend usable as a LAN application. It includes a Windows control panel and executable packaging, real accounts, collection sharing, document processing, saved research, and encrypted backups. Local mode works without an AI subscription or model server.
 
+Vietnamese is the default interface language from 0.2.4. Choose **English** in **Ngôn ngữ / Language** to switch. [Hướng dẫn nhanh bằng tiếng Việt](docs/HUONG-DAN-TIENG-VIET.md).
+
 ## Start on Windows
 
 Download the Windows x64 package from the **Verify and package** workflow artifact, extract the whole ZIP, and open **LegalLibrary.exe**. Keep its `_internal` folder beside it. Choose **Start server**, trust the installation's HTTPS certificate, then choose **Open library**. Create the first administrator using the setup code displayed on the host.

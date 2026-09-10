@@ -2,6 +2,8 @@
 
 One Windows computer hosts the library. Your colleagues open its address in a browser; they do not install anything. Keep the host awake and connected to your network.
 
+The app now defaults to Vietnamese. Choose **English** in **Ngôn ngữ / Language** to follow the English labels below, or use the [Vietnamese quickstart](HUONG-DAN-TIENG-VIET.md). Browser and launcher language preferences are independent.
+
 ## First start
 
 1. Extract the entire Windows ZIP to a folder you want to keep. Keep `LegalLibrary.exe` and `_internal` together.

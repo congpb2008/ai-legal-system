@@ -12,12 +12,12 @@ class ApiClient {
   try {
    const response=await fetch(url,opts);const result=await response.json();
    if(generation!==this.generation)throw new DOMException('Request cancelled.','AbortError');
-   if(!result.success)throw Object.assign(new Error(result.error?.message||'Please try again.'),{status:response.status,code:result.error?.code});
+   if(!result.success)throw Object.assign(new Error(i18n.message(result.error?.message||'Please try again.')),{status:response.status,code:result.error?.code});
    return result.data;
   } catch(error) {
    if(generation!==this.generation)throw new DOMException('Request cancelled.','AbortError');
    if(error.status===401&&!path.startsWith('/v1/auth/'))window.dispatchEvent(new Event('session-expired'));
-   throw error instanceof TypeError?new Error('Cannot reach the server. Check your connection and try again.'):error;
+   throw error instanceof TypeError?new Error(i18n.t('Cannot reach the server. Check your connection and try again.')):error;
   } finally {this.pending.delete(controller);}
  }
  get(p,q){return this.request('GET',p,undefined,q)}
@@ -25,5 +25,5 @@ class ApiClient {
  patch(p,b={}){return this.request('PATCH',p,b)}
  delete(p){return this.request('DELETE',p)}
 }
-localStorage.removeItem('auth_token');
+try{localStorage.removeItem('auth_token');}catch{}
 const api=new ApiClient();

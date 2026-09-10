@@ -43,6 +43,31 @@ try{
  const logout=async()=>{await page.getByRole('button',{name:'Sign out',exact:true}).click();await page.getByRole('heading',{name:'Welcome back',exact:true}).waitFor();};
  const filter=async()=>{await page.getByRole('button',{name:'Apply filters',exact:true}).click();await page.waitForLoadState('networkidle');};
  const target=()=>page.getByRole('button',{name:'Đấu thầu 100%_policy',exact:true});
+ // Fresh browsers default to Vietnamese. A stored English choice survives reload/sign-out.
+ await page.goto(base+'/#/login');
+ await page.getByRole('heading',{name:'Chào mừng bạn trở lại',exact:true}).waitFor();
+ assert.equal(await page.locator('html').getAttribute('lang'),'vi');
+ assert.equal(await page.title(),'Thư viện pháp lý');
+ await page.getByLabel('Tên đăng nhập',{exact:true}).fill('admin');
+ await page.getByLabel('Mật khẩu',{exact:true}).fill('incorrect synthetic password');
+ await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
+ await page.getByText('Tên đăng nhập hoặc mật khẩu không đúng.',{exact:true}).waitFor();
+ await page.getByLabel('Mật khẩu',{exact:true}).fill(password);
+ await page.getByRole('button',{name:'Đăng nhập',exact:true}).click();
+ await page.getByRole('link',{name:'Tài liệu',exact:true}).click();
+ await page.getByRole('button',{name:'Áp dụng bộ lọc',exact:true}).waitFor();
+ assert.match(await page.locator('#document-count').innerText(),/Tài liệu 1–100 trên tổng số 106/);
+ await page.getByRole('link',{name:'Trợ giúp',exact:true}).click();
+ await page.getByRole('heading',{name:'Tài liệu dạng quét',exact:true}).waitFor();
+ await page.getByRole('link',{name:'Cài đặt máy chủ',exact:true}).click();
+ await page.getByLabel('Phương pháp OCR',{exact:true}).waitFor();
+ await page.locator('#ocr-mode').scrollIntoViewIfNeeded();
+ await page.screenshot({path:path.join(output,'vietnamese-ocr.png')});
+ await page.locator('#language-select').selectOption('en');
+ await page.getByRole('heading',{name:'Server settings',exact:true}).waitFor();
+ await page.reload();await page.getByRole('heading',{name:'Server settings',exact:true}).waitFor();
+ assert.equal(await page.locator('html').getAttribute('lang'),'en');
+ await logout();
  await login('admin');
  assert.deepEqual(await page.locator('.stat').allTextContents(),['105','103','1']);
  await page.getByRole('link',{name:'Documents',exact:true}).click();await page.locator('#document-count').waitFor();
@@ -126,8 +151,23 @@ try{
  await page.getByText('AI provider enabled. New uploads will use this configuration.',{exact:true}).waitFor();
  await page.getByLabel('Provider address',{exact:true}).waitFor();assert(await page.locator('#provider-lan').isChecked());
  assert.equal(await page.getByLabel('Provider address',{exact:true}).inputValue(),fixture.provider);
+ await page.locator('#language-select').selectOption('vi');
+ await page.getByRole('heading',{name:'Cài đặt máy chủ',exact:true}).waitFor();
+ assert.equal(await page.locator('#base_url').inputValue(),fixture.provider);
+ assert.equal(await page.locator('#ocr-model').inputValue(),'test-vision');
+ await page.getByRole('link',{name:'Tổng quan',exact:true}).click();
+ await page.locator('.stat').first().waitFor();await page.screenshot({path:path.join(output,'vietnamese-overview.png')});
+ await page.setViewportSize({width:390,height:844});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:path.join(output,'vietnamese-mobile.png')});
+ // Declining a language change retains unsaved text and the current language.
+ await page.getByRole('link',{name:'Hỏi đáp tài liệu',exact:true}).click();
+ await page.locator('#query').fill('Documents — nội dung chưa lưu');
+ page.once('dialog',dialog=>dialog.dismiss());await page.locator('#language-select').selectOption('en');
+ assert.equal(await page.locator('#query').inputValue(),'Documents — nội dung chưa lưu');
+ assert.equal(await page.locator('#language-select').inputValue(),'vi');
  assert.deepEqual(errors,[]);
- await fs.writeFile(path.join(output,'result.json'),JSON.stringify({passed:true,checks:['complete counts','103 collections','pagination','Vietnamese title filter','archive filter','mobile width','reader permissions','contributor metadata','late answer isolation','late saved-answer isolation','upload sign-out isolation','vision OCR probe and settings','simulated LAN Ollama settings and connectivity','OCR without AI answers'],consoleErrors:errors},null,2));
+ await fs.writeFile(path.join(output,'result.json'),JSON.stringify({passed:true,checks:['Vietnamese default and login errors','English preference persistence','Vietnamese desktop and mobile','unsaved language change cancellation','provider values preserved across languages','complete counts','103 collections','pagination','Vietnamese title filter','archive filter','mobile width','reader permissions','contributor metadata','late answer isolation','late saved-answer isolation','upload sign-out isolation','vision OCR probe and settings','simulated LAN Ollama settings and connectivity','OCR without AI answers'],consoleErrors:errors},null,2));
  console.log('Browser regression passed. Evidence: '+output);
 }finally{
  if(browser)await browser.close();

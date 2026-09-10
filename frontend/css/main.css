@@ -4,3 +4,6 @@
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
 @media(max-width:720px){.nav{flex-wrap:wrap;overflow:visible}.nav a{font-size:12px;padding:7px 9px}}
 .ocr-options{border:0;padding:0;min-width:0}
+.language-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;padding:8px 24px;background:var(--surface,#fff);border-bottom:1px solid #dce7e5;font-size:14px}.language-bar select{width:auto;max-width:150px;padding:6px 10px}.language-bar label{margin:0}@media(max-width:600px){.language-bar{padding:8px 16px;flex-wrap:wrap}}
+
+.sidebar .brand{font-size:18px;gap:8px}

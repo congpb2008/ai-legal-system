@@ -193,10 +193,10 @@ System status totals and all-managed-document reprocessing use the complete auth
 
 ## Restoring the exported Git checkpoint
 
-The source ZIP contains the complete implementation. The cumulative `.patch` preserves all four implementation commits and must be applied in a clean checkout at baseline `075d688d54203204c4227b30ecd60fbf82b1fdf1`:
+The source ZIP contains the complete implementation. The cumulative `.patch` preserves all five implementation commits and must be applied in a clean checkout at baseline `075d688d54203204c4227b30ecd60fbf82b1fdf1`:
 
 ```sh
-git am --keep-cr /path/to/Legal-Library-0.2.3.patch
+git am --keep-cr /path/to/Legal-Library-0.2.4.patch
 ```
 
 Keep `--keep-cr`: the older README blobs contain Windows line endings. Plain `git am` strips carriage returns while reading the mail patch and can fail on those README changes. A separate local clone successfully replayed the full export with `--keep-cr`, producing the same source tree. If an earlier attempt failed, run `git am --abort` in that test checkout before retrying. Git needs the maintainer's normal committer identity configured. Do not apply the cumulative patch on top of an existing implementation commit. GitHub publication and remote CI still require restored write access.
@@ -213,3 +213,16 @@ Read [the operator guide](OCR-AND-OLLAMA.md) before changing processing destinat
 No database schema migration is required. Existing ready documents are not automatically re-extracted by an OCR settings change. Retry failed documents or upload a new immutable source version. Avoid reprocessing a historical version in place: existing citations need stable source text.
 
 Verification includes `tests/test_vision_ocr.py`, the OCR administrator/member and scan-ingestion HTTP journey, encrypted OCR-secret backup/restore, and the browser settings flow. Synthetic HTTP fixtures exercise actual requests but do not establish real model quality, live second-PC connectivity or customer readiness. Review representative scans against originals before enabling a production vision destination.
+
+
+## 0.2.4 language support
+
+The browser loads `frontend/js/vi.js` (English-keyed Vietnamese catalog) and `i18n.js` before its API client and application. Missing/invalid language preferences default to `vi`; `en` preserves the English UI. `legal-library-language` in localStorage is device/origin-specific, not account data. Denied storage falls back to Vietnamese; a failed preference write reports an error. The public HTML has `lang="vi"` and Vietnamese loading text before scripts run. Dates use vi-VN/en-US for display while stored ISO dates stay unchanged.
+
+Developer-owned strings use `i18n.t()`, literal HTML uses `i18n.markup()`, and translated template literals use `i18n.html`. The tagged template translates its static skeleton before inserting dynamic values; it must never scan rendered customer text. Existing escaping remains required for interpolated values. Catalog entries with `{{n}}` must preserve every placeholder; changing expression order requires updating that entry. Never translate filenames, source quotations, model IDs, credentials, route IDs or API enum values. `display()` translates domain enums at display boundaries; `message()` translates known operational messages and leaves unknown technical details intact. No translation API or network request is involved.
+
+Language changes reload the page and retain its route. Unsaved edits/selected files prompt first; active uploads block the switch. Preference persistence survives sign-out but is not included in a server backup. The bilingual selector remains visible at login and in the app. System file dialogs and browser-native validation follow the host/browser language.
+
+The launcher uses `desktop_language.py`, defaults to Vietnamese, and stores its independent choice in `launcher-preferences.json`. Its selector updates control labels and periodic status text without restarting the server. Preference saves retain the chosen data folder; routine server-settings saves retain the language. The catalog includes service, certificate, backup and recovery dialog copy. Untranslated operating-system and backend diagnostics remain available verbatim.
+
+Run the four dependency-free Node tests and the bilingual browser regression described in the [browser guide](../tests/browser/README.md). Verify launcher/PDF initialization in the Windows bundle. The [Vietnamese quickstart](HUONG-DAN-TIENG-VIET.md) explains default behavior, privacy and upgrade steps. No database migration is required.

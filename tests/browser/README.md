@@ -19,3 +19,5 @@ The settings checks use a synthetic OpenAI/Ollama HTTP fixture. A test-only sock
 Evidence is kept under `.artifacts/browser-*/`: desktop/mobile screenshots, `result.json` on success, and `host.log`. The browser and server are stopped in `finally`; the server also has a three-minute maximum lifetime. A failed run exits nonzero and retains its test folder for investigation. This optional Node toolchain does not ship with or run inside the Windows application.
 
 CI runs this flow on Linux after the Python suite. Local Windows verification can use Edge; neither proves elevated Windows service installation, a reboot, certificate trust on a second LAN device, or public HTTPS deployment.
+
+The language regression checks Vietnamese as the fresh-browser default, translated login errors, English persistence after reload/sign-out, Vietnamese catalog/settings/help, mobile width, unchanged provider values and cancellation of a language change with unsaved text. Run `node --test tests/browser/i18n.test.cjs` for the dependency-free catalog/placeholder/source-isolation/storage tests.

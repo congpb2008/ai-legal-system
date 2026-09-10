@@ -41,6 +41,7 @@ jobs:
       - name: Verify browser catalog and account transitions
         if: runner.os == 'Linux'
         run: |
+          node --test tests/browser/i18n.test.cjs
           npm install --prefix tests/browser
           npx --prefix tests/browser playwright install --with-deps chromium
           npm test --prefix tests/browser

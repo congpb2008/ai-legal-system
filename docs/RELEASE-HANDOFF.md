@@ -1,8 +1,14 @@
-# Release handoff — 0.2.3 OCR and LAN providers
+# Release handoff — 0.2.4 Vietnamese default
 
 Updated 2026-09-10. This is the continuation record for the usable-product implementation, not a declaration that public customer launch is complete.
 
-## Changes since 0.2.2
+## Changes since 0.2.3
+
+The preceding checkpoint is `0d7dd8110be0dc222c9bd2320d2898e27c52f4f5`. The user requested Vietnamese as a language option and as the default. Both browser and Windows launcher now default to Vietnamese, keep English available and remember independent device preferences. Interface text, common errors, OCR guidance, accessibility labels, dates and answer-export labels are localized; source text, user data and provider identifiers remain unchanged. The browser protects unsaved edits and active uploads on a language switch. See [the Vietnamese quickstart](HUONG-DAN-TIENG-VIET.md) and the maintainer language section.
+
+Verification: 758 Python tests passed, plus four dependency-free language tests. The bilingual browser regression passed with no JavaScript errors. Actual Tk controls passed Vietnamese-default, live English/Vietnamese switching and saved-preference checks. The rebuilt Windows executable passed launcher/PDF initialization and its certificate-verified HTTPS document, OCR and restart journeys. The 0.2.4 output manifest records the results. Existing real-provider, clean-machine service/reboot, hosted deployment and customer benchmark gates remain. GitHub publication was attempted again but connector writes still returned integration HTTP 403; local Git requires a completed GitHub sign-in. Do not confuse full filesystem access with GitHub authentication.
+
+## Earlier 0.2.3 OCR and LAN provider work
 
 The preceding checkpoint is `ac14400a7ebb41a3d1e7556ad4a0cf817109029d`. The user requested an alternative to unavailable Tesseract and support for Ollama on another LAN computer. Version 0.2.3 adds independent vision OCR settings, a generated-image connection test, Tesseract-first fallback, provider keys, bounded page processing and visible vision provenance. AI search, native embeddings and OCR support explicit LAN opt-in through a shared DNS-pinned, redirect-free transport. The desktop directs scan users to these settings.
 
