@@ -101,11 +101,44 @@ def tesseract_executable():
     configured = os.environ.get('LEGAL_PLATFORM_TESSERACT')
     if configured:
         return configured
-    executable = shutil.which('tesseract')
-    for candidate in (Path(os.environ.get('ProgramFiles', 'C:/Program Files'))/'Tesseract-OCR/tesseract.exe', asset_root()/'ocr/tesseract.exe'):
-        if not executable and candidate.is_file():
-            executable = str(candidate)
-    return executable
+    # The tested private runtime must win over an incomplete system install.
+    for candidate in (asset_root()/'ocr/tesseract.exe', Path(os.environ.get('ProgramFiles', 'C:/Program Files'))/'Tesseract-OCR/tesseract.exe'):
+        if candidate.is_file():
+            return str(candidate)
+    return shutil.which('tesseract')
+
+
+def tesseract_data_args(executable):
+    """Resolve data explicitly, independent of service cwd and TESSDATA_PREFIX."""
+    data = Path(executable).resolve().parent / 'tessdata'
+    return ['--tessdata-dir', str(data)] if data.is_dir() else []
+
+
+def recognize_image(image, language):
+    """Pass paths as argument-array entries; pytesseract retains quotes on Windows.
+
+    TSV stdout avoids a global executable setting and supports concurrent jobs.
+    Explicit data paths also work in service accounts and directories with spaces.
+    """
+    import csv
+    import io
+    import subprocess
+    executable = tesseract_executable()
+    if not executable:
+        raise RuntimeError('Tesseract is unavailable')
+    with tempfile.TemporaryDirectory(prefix='legal-ocr-page-') as directory:
+        source = Path(directory) / 'page.png'
+        image.save(source)
+        result = subprocess.run(
+            [executable, str(source), 'stdout', *tesseract_data_args(executable),
+             '-l', language, '-c', 'tessedit_create_tsv=1'],
+            capture_output=True, timeout=60,
+            creationflags=0x08000000 if os.name == 'nt' else 0,
+        )
+        if result.returncode:
+            raise RuntimeError(result.stderr.decode('utf-8', errors='replace').strip())
+        rows = list(csv.DictReader(io.StringIO(result.stdout.decode('utf-8')), delimiter='\t', quoting=csv.QUOTE_NONE))
+        return {key: [row[key] for row in rows] for key in ('text', 'conf', 'block_num', 'par_num', 'line_num')}
 
 
 def ocr_status():
@@ -114,7 +147,7 @@ def ocr_status():
     if not executable:
         return dict(tesseract_available=False, languages=[], message='Tesseract was not found. Install it on the library server or choose vision OCR below.')
     try:
-        result = subprocess.run([executable, '--list-langs'], capture_output=True, text=True, timeout=5,
+        result = subprocess.run([executable, *tesseract_data_args(executable), '--list-langs'], capture_output=True, text=True, timeout=5,
                                 creationflags=0x08000000 if os.name == 'nt' else 0)
         languages = result.stdout.splitlines()[1:] if result.returncode == 0 else []
         return dict(tesseract_available=result.returncode == 0, languages=languages,

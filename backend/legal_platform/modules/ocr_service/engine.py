@@ -304,20 +304,12 @@ class Pdf2ImageTesseractEngine:
             raise OcrEngineError("pytesseract is not installed") from e
 
         import os
-        import shutil
         import fitz
         from PIL import Image
-        from legal_platform.paths import asset_root
-        executable = os.environ.get('LEGAL_PLATFORM_TESSERACT') or shutil.which('tesseract')
-        standard = Path(os.environ.get('ProgramFiles', 'C:/Program Files')) / 'Tesseract-OCR/tesseract.exe'
-        if not executable and standard.exists():
-            executable = str(standard)
-        bundled = asset_root() / 'ocr' / 'tesseract.exe'
-        if not executable and bundled.exists():
-            executable = str(bundled)
+        from .config import tesseract_executable, recognize_image
+        executable = tesseract_executable()
         if not executable:
             raise OcrEngineError('Scanned pages need Tesseract with Vietnamese language data. Ask the server administrator to enable OCR, then retry this document.')
-        pytesseract.pytesseract.tesseract_cmd = executable
         pdf = fitz.open(stream=content, filetype='pdf')
         if len(pdf) > 500:
             pdf.close()
@@ -345,12 +337,7 @@ class Pdf2ImageTesseractEngine:
         for page_num, image in enumerate(images):
             try:
                 # OCR with detailed output (per-line confidence)
-                ocr_data = pytesseract.image_to_data(
-                    image,
-                    lang=self.lang,
-                    output_type=pytesseract.Output.DICT,
-                    timeout=60,
-                )
+                ocr_data = recognize_image(image, self.lang)
 
                 lines: list[OcrLine] = []
                 page_text_parts: list[str] = []

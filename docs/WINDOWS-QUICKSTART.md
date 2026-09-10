@@ -54,7 +54,7 @@ If every administrator is locked out, the trusted host operator can stop the ser
 
 ## Scanned PDFs
 
-Text PDFs and Word files work without OCR. For scans, open **Server settings → Reading scanned PDFs (OCR)** and choose Tesseract, a vision model, or Tesseract with a vision fallback. Vision OCR has its own model, address and optional API key; you can use it while keeping answers in local mode. Test the settings, save, then retry failed documents.
+Text PDFs and Word files work without OCR. New Windows builds include local Tesseract with Vietnamese and English data: extract the complete bundle, keeping `_internal` beside the executable. No separate OCR installation, API key, or internet connection is needed for local scan recognition. For scans, open **Server settings → Reading scanned PDFs (OCR)** and choose Tesseract, a vision model, or Tesseract with a vision fallback. Vision OCR has its own model, address and optional API key; you can use it while keeping answers in local mode. Test the settings, save, then retry failed documents.
 
 Follow **[Scanned PDFs and Ollama on another computer](OCR-AND-OLLAMA.md)** for Tesseract installation, vision configuration, privacy, limits and troubleshooting. Vision transcriptions may invent or omit text; inspect the original before relying on them.
 

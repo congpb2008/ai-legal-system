@@ -37,7 +37,9 @@ The three choices are:
 
 Fallback does not measure whether a plausible Tesseract transcription is correct. Review difficult scans whichever method you use.
 
-For local OCR, install Tesseract with **Vietnamese (`vie`) and English (`eng`)** language data on the library host. The settings page checks availability. The app finds the standard `C:\Program Files\Tesseract-OCR\tesseract.exe` location or the executable set by `LEGAL_PLATFORM_TESSERACT`. Restart the server after changing that environment variable. A Windows service must also be able to access the executable and language files. Follow [Tesseract's installation documentation](https://tesseract-ocr.github.io/tessdoc/Installation.html).
+New Windows builds bundle Tesseract with **Vietnamese (`vie`) and English (`eng`)** data. Keep the entire extracted folder, including `_internal`; no separate OCR installation is needed. Existing downloads do not gain OCR automatically: replace the application bundle with a newly built one, preserving the separate library data folder.
+
+For source installations, install Tesseract and both languages, or on Windows prepare the private runtime using [the build guide](BUNDLED-OCR.md). The app uses an explicit `LEGAL_PLATFORM_TESSERACT` override first, then bundled OCR, the standard Windows installation, and finally PATH. Clear a stale override to use the bundle. Language data beside the selected executable is passed explicitly, so a service's working folder or stale `TESSDATA_PREFIX` does not break bundled OCR. Vision-only and consented vision fallback remain available.
 
 ## What is sent and how to review it
 

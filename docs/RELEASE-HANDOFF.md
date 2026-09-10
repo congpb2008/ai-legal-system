@@ -108,3 +108,8 @@ dist/LegalLibrary/LegalLibrary.exe --self-check --data-dir ./build-check
 On the original Codex workstation only, redirected Windows paths required relative `TCL_LIBRARY` and `TK_LIBRARY` paths to the bundled Python Tcl directories while building. A missing `msvcp140.dll` in the workstation's PyMuPDF environment was supplied from the installed runtime; the spec includes it when present. Treat these as build-environment notes, not steps every end user should perform. The frozen self-check catches missing Tk/PDF dependencies.
 
 Keep test data in a separate working folder. If a test host has alternating sandbox owners, use a fresh pytest `--basetemp` and disable its cache rather than reusing inaccessible temporary directories. The CI runners normally do not have that workstation-specific issue.
+
+## OCR audit checkpoint (2026-09-10)
+
+See [Bundled OCR audit and build notes](BUNDLED-OCR.md). New Windows builds now include Vietnamese/English Tesseract and require it at build time. This supersedes the older external-only OCR notes above. Vision remains available. Broader product audit remains pending; preserve the explicit validation limits in the checkpoint.
+

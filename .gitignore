@@ -82,3 +82,6 @@ Thumbs.db
 
 # Optional browser regression dependencies
 node_modules/
+
+# Generated private OCR runtime (reproduced by packaging/prepare_ocr.py)
+/ocr/
