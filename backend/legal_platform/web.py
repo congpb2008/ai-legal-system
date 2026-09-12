@@ -1,6 +1,8 @@
 """Bounded WSGI boundary for the LAN and HTTPS server."""
 from __future__ import annotations
-import io
+
+import base64
+import datetime
 import json
 import logging
 import mimetypes
@@ -8,76 +10,75 @@ import os
 import re
 import threading
 import time
-from collections import deque
-from email.parser import BytesParser
-from email.policy import default
 from http import HTTPStatus
 from http.cookies import SimpleCookie
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
-from ipaddress import ip_address, ip_network
-from uuid import UUID, uuid4
+from urllib.parse import parse_qs
+from uuid import UUID
 
+from legal_platform.api.middleware import (
+    BodyReader,
+    OriginValidator,
+    RateLimiter,
+    SecurityHeaders,
+)
 from legal_platform.api.models import ApiResponse
+from legal_platform.api.router import ApiRouter
 from legal_platform.modules.vault.models import Permission
 from legal_platform.paths import asset_root
+from legal_platform.storage.history import HistoryRepository
 
 
 class WebApplication:
+    """WSGI application coordinating security, sessions, and request routing."""
+
     def __init__(self, handler_cls, platform):
-        self.public_origin = os.environ.get('LEGAL_PLATFORM_PUBLIC_ORIGIN', '').strip().rstrip('/')
-        if self.public_origin:
-            origin = urlsplit(self.public_origin)
-            if origin.scheme != 'https' or not origin.hostname or origin.username or origin.password or origin.path or origin.query or origin.fragment:
-                raise ValueError('LEGAL_PLATFORM_PUBLIC_ORIGIN must be an HTTPS origin, such as https://library.example.com, without a path or credentials.')
-            origin.port  # Validate the optional port before accepting requests.
-            self.public_origin = 'https://' + origin.netloc.lower()
-            self.public_host = origin.netloc.lower()
-        self.trusted_proxies = [ip_network(value.strip(), strict=False) for value in os.environ.get('LEGAL_PLATFORM_TRUSTED_PROXIES', '').split(',') if value.strip()]
-        self.router = object.__new__(handler_cls)
+        self.validator = OriginValidator.from_environ()
+        self.public_origin = self.validator.public_origin
+        self.public_host = self.validator.public_host
+        self.trusted_proxies = self.validator.trusted_proxies
+
+        # Clean router resolution without uninitialized object.__new__ bypass
+        if isinstance(handler_cls, ApiRouter):
+            self.router = handler_cls
+        elif hasattr(platform, "router") and isinstance(platform.router, ApiRouter):
+            self.router = platform.router
+        elif isinstance(handler_cls, type):
+            self.router = ApiRouter(
+                auth_handler=getattr(handler_cls, "auth_handler", None),
+                vault_handler=getattr(handler_cls, "vault_handler", None),
+                document_handler=getattr(handler_cls, "document_handler", None),
+                upload_handler=getattr(handler_cls, "upload_handler", None),
+                search_handler=getattr(handler_cls, "search_handler", None),
+                answer_handler=getattr(handler_cls, "answer_handler", None),
+                admin_handler=getattr(handler_cls, "admin_handler", None),
+                health_handler=getattr(handler_cls, "health_handler", None),
+                setup_handler=getattr(handler_cls, "setup_handler", None),
+            )
+        else:
+            self.router = ApiRouter()
+
         self.platform = platform
         self.auth = self.router.auth_handler
         self.conn = self.auth.conn
-        self.conn.executescript('''CREATE TABLE IF NOT EXISTS answer_history (
-            id TEXT PRIMARY KEY, user_id TEXT NOT NULL, question TEXT NOT NULL,
-            answer_json TEXT NOT NULL, created_at REAL NOT NULL, feedback TEXT,
-            note TEXT NOT NULL DEFAULT '');''')
-        self.conn.commit()
-        self._rates = {}
-        self._rate_lock = threading.Lock()
+        self.history = HistoryRepository(self.conn)
+
+        self.rate_limiter = RateLimiter()
         self._upload_lock = threading.Lock()
 
     def _limited(self, key, count, period=60):
-        now = time.monotonic()
-        with self._rate_lock:
-            if len(self._rates) > 10000:
-                self._rates = {k: v for k, v in self._rates.items() if v and v[-1] > now - 3600}
-                if len(self._rates) > 10000:
-                    return True
-            queue = self._rates.setdefault(key, deque())
-            while queue and queue[0] < now - period:
-                queue.popleft()
-            if len(queue) >= count:
-                return True
-            queue.append(now)
-            return False
+        return self.rate_limiter.is_limited(key, count, period)
 
     def __call__(self, env, start_response):
         env = dict(env)
-        # Trust forwarding only from explicitly configured network peers. The
-        # public origin is an operator setting, never a client-supplied header.
-        try:
-            peer = ip_address(env.get('REMOTE_ADDR', ''))
-            if any(peer in network for network in self.trusted_proxies):
-                forwarded = env.get('HTTP_X_FORWARDED_FOR', '').strip()
-                env['REMOTE_ADDR'] = str(ip_address(forwarded))
-        except ValueError:
-            pass
+        self.validator.apply_forwarded_peer(env)
         if self.public_origin:
             env['wsgi.url_scheme'] = 'https'
+
         path = env.get('PATH_INFO', '/').rstrip('/') or '/'
         method = env.get('REQUEST_METHOD', 'GET')
         api_path = path[4:] if path.startswith('/api/') else path
+
         token = None
         auth_header = env.get('HTTP_AUTHORIZATION', '')
         if auth_header.startswith('Bearer '):
@@ -90,14 +91,17 @@ class WebApplication:
         if not token and cookie.get('legal_session'):
             token = cookie['legal_session'].value
         uid = self.auth.resolve_user(token)
+
         status_code, payload, headers = 200, b'', []
         try:
-            if self.public_origin and env.get('HTTP_HOST', '').lower() != self.public_host and api_path not in ('/health', '/ready', '/live'):
+            if self.validator.is_misdirected(env.get('HTTP_HOST', ''), api_path):
                 payload = json.dumps({'success': False, 'error': {'message': 'Open the library at its configured public address.'}}).encode()
                 start_response('421 Misdirected Request', [('Content-Type', 'application/json'), ('Content-Length', str(len(payload))), ('Cache-Control', 'no-store')])
                 return [payload]
+
             if not path.startswith('/api/') and path not in ('/health', '/ready', '/live'):
                 return self._static(path, method, start_response)
+
             public = api_path in ('/health', '/ready', '/live', '/v1/setup/status',
                                    '/v1/auth/login', '/v1/auth/signup', '/v1/auth/bootstrap', '/v1/auth/reset')
             if not public and not uid:
@@ -122,24 +126,27 @@ class WebApplication:
                         params[name] = str(max(0 if name == 'offset' else 1, min(int(params[name]), 2147483647 if name == 'offset' else 100)))
                 if 'query' in body and (not isinstance(body['query'], str) or len(body['query']) > 4000):
                     raise ValueError('Questions must be text with at most 4,000 characters.')
+
                 if api_path == '/v1/uploads' and method == 'POST':
                     with self._upload_lock:
                         quota = int(os.environ.get('LEGAL_PLATFORM_STORAGE_LIMIT_MB', '2048')) * 1024 * 1024
                         size = sum(p.stat().st_size for p in self.platform._upload.storage.base_path.rglob('*') if p.is_file())
                         incoming = body.get('file', b'')
                         if not incoming and body.get('content_base64'):
-                            incoming = __import__('base64').b64decode(body['content_base64'], validate=True)
+                            incoming = base64.b64decode(body['content_base64'], validate=True)
                         if len(incoming) > 25 * 1024 * 1024 or size + len(incoming) > quota:
                             response = self.auth.error('This server has reached its document storage limit. Contact your administrator.', 413)
                         else:
                             response = self.dispatch(method, api_path, params, body, token, uid)
                 else:
                     response = self.dispatch(method, api_path, params, body, token, uid)
+
                 if api_path == '/v1/auth/login' and response.success:
                     secure = '; Secure' if env.get('wsgi.url_scheme') == 'https' else ''
                     headers.append(('Set-Cookie', 'legal_session=' + response.data['token'] + '; Path=/; Max-Age=43200; HttpOnly; SameSite=Strict' + secure))
                 if api_path == '/v1/auth/logout':
                     headers.append(('Set-Cookie', 'legal_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Strict'))
+
             status_code = response.status
             payload = json.dumps(response.to_dict(), ensure_ascii=False, default=str).encode('utf-8')
         except OverflowError as exc:
@@ -148,23 +155,21 @@ class WebApplication:
         except json.JSONDecodeError:
             status_code = 400
             payload = json.dumps(self.auth.error('The request contains invalid JSON.', 400, 'INVALID_JSON').to_dict()).encode()
-        except (ValueError, TypeError, KeyError) as exc:
+        except (ValueError, TypeError, KeyError):
             status_code = 400
             payload = json.dumps(self.auth.error('Check the submitted fields, IDs and dates.').to_dict()).encode()
         except Exception:
             logging.exception('Request failed: %s %s', method, api_path)
             status_code = 500
             payload = json.dumps(self.auth.error('The request could not be completed. Contact your administrator.', 500).to_dict()).encode()
+
         headers += self.headers() + [('Content-Type', 'application/json; charset=utf-8'), ('Content-Length', str(len(payload)))]
         start_response(f'{status_code} {HTTPStatus(status_code).phrase}', headers)
         return [payload]
 
     @staticmethod
     def headers():
-        return [('Cache-Control', 'no-store'), ('X-Content-Type-Options', 'nosniff'),
-                ('X-Frame-Options', 'DENY'), ('Referrer-Policy', 'no-referrer'),
-                ('Permissions-Policy', 'camera=(), microphone=(), geolocation=()'),
-                ('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")]
+        return SecurityHeaders.headers()
 
     def _static(self, path, method, start_response):
         root = (asset_root() / 'frontend').resolve()
@@ -179,40 +184,7 @@ class WebApplication:
         return [data if method == 'GET' else b'']
 
     def _body(self, env, path):
-        size = int(env.get('CONTENT_LENGTH') or 0)
-        maximum = 35 * 1024 * 1024 if path == '/v1/uploads' else 128 * 1024
-        if size < 0 or size > maximum:
-            # Drain a bounded rejected body so Windows can deliver the 413 response.
-            remaining = size if 0 < size <= 40 * 1024 * 1024 else 0
-            while remaining:
-                chunk = env['wsgi.input'].read(min(65536, remaining))
-                if not chunk:
-                    break
-                remaining -= len(chunk)
-            raise OverflowError('The file is too large. Upload files of at most 25 MB.')
-        raw = env['wsgi.input'].read(size)
-        content_type = env.get('CONTENT_TYPE', '')
-        if content_type.startswith('multipart/form-data') and path == '/v1/uploads':
-            message = BytesParser(policy=default).parsebytes(b'Content-Type: ' + content_type.encode('ascii') + b'\r\nMIME-Version: 1.0\r\n\r\n' + raw)
-            result = {}
-            for part in message.iter_parts():
-                name = part.get_param('name', header='content-disposition')
-                value = part.get_payload(decode=True) or b''
-                if part.get_filename():
-                    if len(value) > 25 * 1024 * 1024:
-                        raise OverflowError('Upload files of at most 25 MB.')
-                    result['file'] = value
-                    result['__filename__'] = part.get_filename()
-                    result['mime_type'] = part.get_content_type()
-                elif name and len(value) < 16000:
-                    result[name] = value.decode('utf-8')
-            return result
-        if raw and not content_type.startswith('application/json'):
-            raise ValueError('Use JSON or a file upload.')
-        body = json.loads(raw) if raw else {}
-        if not isinstance(body, dict):
-            raise ValueError('JSON object required')
-        return body
+        return BodyReader.read_body(env, path)
 
     def dispatch(self, method, path, params, body, token, uid):
         a = self.auth
@@ -236,7 +208,7 @@ class WebApplication:
             original = self.router.health_handler.ready() if path == '/ready' else self.router.health_handler.live()
             return ApiResponse.ok(data={'status': 'ready' if path == '/ready' else 'alive'}) if original.success else a.error('Server is not ready.', 503)
         if not uid:
-            return self.router._dispatch(method, path, params, body, token)
+            return self.router.dispatch(method, path, params, body, token, user_id=uid)
         if path == '/v1/account' and method == 'PATCH':
             return a.profile(uid, body)
         if path == '/v1/account/password' and method == 'POST':
@@ -285,22 +257,22 @@ class WebApplication:
                     self.platform._vault.add_member(vid, target, role=role)
             return ApiResponse.ok(data={'message': 'Sharing updated.'})
         if path == '/v1/history' and method == 'GET':
-            rows = self.conn.execute('SELECT * FROM answer_history WHERE user_id=? ORDER BY created_at DESC LIMIT 100', (uid,))
+            rows = self.history.list_history(uid, limit=100)
             return ApiResponse.ok(data=[{'id': r['id'], 'question': r['question'], 'created_at': r['created_at'], 'feedback': r['feedback']} for r in rows if self._history_allowed(r, uid)])
         if path.startswith('/v1/history/'):
-            row = self.conn.execute('SELECT * FROM answer_history WHERE id=? AND user_id=?', (path.split('/')[-1], uid)).fetchone()
+            hid = path.split('/')[-1]
+            row = self.history.get_history_item(hid, uid)
             if not row or not self._history_allowed(row, uid):
                 return a.error('Saved answer is unavailable or its collection access has changed.', 404)
             if method == 'DELETE':
-                self.conn.execute('DELETE FROM answer_history WHERE id=? AND user_id=?', (row['id'], uid))
-                self.conn.commit()
+                self.history.delete_history_item(hid, uid)
                 return ApiResponse.ok(data={'message': 'Saved answer deleted.'})
             if method == 'PATCH':
                 feedback = body.get('feedback')
                 if feedback not in ('useful', 'wrong_source', 'outdated', 'incomplete', 'unsupported', None):
                     return a.error('Choose a feedback reason.')
-                self.conn.execute('UPDATE answer_history SET feedback=?,note=? WHERE id=? AND user_id=?', (feedback, str(body.get('note') or '')[:2000], row['id'], uid))
-                self.conn.commit()
+                self.history.update_feedback(hid, uid, feedback=feedback, note=body.get('note'))
+                row = self.history.get_history_item(hid, uid)
             return ApiResponse.ok(data={'id': row['id'], 'question': row['question'], 'answer': json.loads(row['answer_json']), 'feedback': row['feedback']})
         if path in ('/v1/retry', '/v1/restore') and method == 'POST':
             from legal_platform.modules.document_registry.processing import ProcessingState
@@ -340,7 +312,7 @@ class WebApplication:
                 return a.error('Collection manager access required.', 403)
             if self.platform._registry.get_processing(did) not in (ProcessingState.READY, ProcessingState.FAILED):
                 return a.error('Wait for processing to finish before adding a version.', 409)
-            content = body.get('file') or __import__('base64').b64decode(body.get('content_base64',''), validate=True)
+            content = body.get('file') or base64.b64decode(body.get('content_base64',''), validate=True)
             filename = body.get('__filename__') or body.get('filename', 'source.pdf')
             upload = self.platform._upload
             mime = upload._resolve_mime_type(filename, body.get('mime_type'))
@@ -358,18 +330,10 @@ class WebApplication:
         if path == '/v1/answers' and method == 'POST':
             if self._limited(('ask', uid), 15):
                 return a.error('You have reached the question limit for this minute. Please wait.', 429)
-        response = self.router._dispatch(method, path, params, body, token)
+        response = self.router.dispatch(method, path, params, body, token, user_id=uid)
         if path == '/v1/answers' and method == 'POST' and response.success:
-            hid = str(uuid4())
-            response.data['history_id'] = hid
-            self.conn.execute('INSERT INTO answer_history (id,user_id,question,answer_json,created_at) VALUES (?,?,?,?,?)', (hid, uid, body['query'], json.dumps(response.data, ensure_ascii=False), time.time()))
-            self.conn.execute('DELETE FROM answer_history WHERE user_id=? AND id NOT IN (SELECT id FROM answer_history WHERE user_id=? ORDER BY created_at DESC LIMIT 1000)', (uid, uid))
-            self.conn.commit()
+            self.history.save_answer(uid, body['query'], response.data)
         return response
 
     def _history_allowed(self, row, uid):
-        for citation in json.loads(row['answer_json']).get('citations', []):
-            document = self.platform._registry.get_document(UUID(citation['document_id']))
-            if not document or not self.platform._vault.check_permission(document.vault_id, uid, Permission.READ):
-                return False
-        return True
+        return self.history.is_history_allowed(row, uid, self.platform._registry, self.platform._vault)

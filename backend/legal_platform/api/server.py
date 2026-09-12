@@ -49,6 +49,7 @@ from legal_platform.api.handlers import (
 )
 
 from legal_platform.api.models import ApiError, ApiResponse, ErrorCategory
+from legal_platform.api.router import ApiRouter
 
 # Path to the frontend static files
 
@@ -188,257 +189,28 @@ class _RequestHandler(BaseHTTPRequestHandler):
         self._send_response(response)
 
     def _dispatch(
-
         self,
-
         method: str,
-
         path: str,
-
         params: dict[str, str],
-
         body: dict[str, Any],
-
         token: Optional[str],
-
     ) -> ApiResponse:
-
         """Dispatch a request to the appropriate handler method."""
-
-        # --- Health (no auth required) ---
-
-        if path in ("/health",):
-
-            return self.health_handler.health()
-
-        if path in ("/ready",):
-
-            return self.health_handler.ready()
-
-        if path in ("/live",):
-
-            return self.health_handler.live()
-
-        # --- Auth (no auth required) ---
-
-        if path == "/v1/auth/login" and method == "POST":
-
-            return self.auth_handler.login(body)
-
-        if path == "/v1/auth/logout" and method == "POST":
-
-            return self.auth_handler.logout(token)
-
-        if path == "/v1/auth/me" and method == "GET":
-
-            return self.auth_handler.me(token)
-
-        # --- Setup (status is public; configuration is public only on first run) ---
-
-        if path == "/v1/setup/status" and method == "GET":
-
-            return self.setup_handler.status()
-
-        if path.startswith("/v1/setup/"):
-            actor = self.auth_handler.resolve_user(token)
-            if actor is None:
-                return self.auth_handler.error('Please sign in.', 401, 'NOT_AUTHENTICATED')
-            if not self.auth_handler.is_admin(actor):
-                return self.auth_handler.error('Only an administrator can change server settings.', 403)
-
-        if path == "/v1/setup/config" and method == "GET":
-
-            return self.setup_handler.get_config()
-
-        if path == "/v1/setup/config" and method == "POST":
-
-            return self.setup_handler.save_config(body)
-
-        if path == "/v1/setup/test" and method == "POST":
-
-            return self.setup_handler.test_connection(body)
-
-        if path == "/v1/setup/complete" and method == "POST":
-
-            return self.setup_handler.complete()
-
-        # All remaining endpoints require authentication
-
-        user_id = self.auth_handler.resolve_user(token)
-
-        if user_id is None:
-
-            return ApiResponse.err_response(
-
-                ApiError(
-
-                    code="NOT_AUTHENTICATED",
-
-                    message="Authentication required. Provide a Bearer token.",
-
-                    category=ErrorCategory.AUTHENTICATION,
-
-                ),
-
-                status=401,
-
+        router = getattr(self, "router", None)
+        if router is None:
+            router = ApiRouter(
+                auth_handler=getattr(self, "auth_handler", None),
+                vault_handler=getattr(self, "vault_handler", None),
+                document_handler=getattr(self, "document_handler", None),
+                upload_handler=getattr(self, "upload_handler", None),
+                search_handler=getattr(self, "search_handler", None),
+                answer_handler=getattr(self, "answer_handler", None),
+                admin_handler=getattr(self, "admin_handler", None),
+                health_handler=getattr(self, "health_handler", None),
+                setup_handler=getattr(self, "setup_handler", None),
             )
-
-        # --- Vaults ---
-
-        if path == "/v1/vaults" and method == "GET":
-
-            return self.vault_handler.list_vaults(params, user_id)
-
-        if path == "/v1/vaults" and method == "POST":
-
-            return self.vault_handler.create_vault(body, user_id)
-
-        if path.startswith("/v1/vaults/") and method == "GET":
-
-            vault_id = path[len("/v1/vaults/"):]
-
-            return self.vault_handler.get_vault(vault_id, user_id)
-
-        if path.startswith("/v1/vaults/") and method == "PATCH":
-
-            vault_id = path[len("/v1/vaults/"):]
-
-            return self.vault_handler.update_vault(vault_id, body, user_id)
-
-        if path.startswith("/v1/vaults/") and method == "DELETE":
-
-            vault_id = path[len("/v1/vaults/"):]
-
-            return self.vault_handler.delete_vault(vault_id, user_id)
-
-        # --- Documents ---
-
-        if path == '/v1/documents/summary' and method == 'GET':
-            return self.document_handler.document_summary(user_id)
-
-        if path == "/v1/documents" and method == "POST":
-
-            return self.document_handler.create_document(body, user_id)
-
-        if path == "/v1/documents" and method == "GET":
-
-            return self.document_handler.list_documents(params, user_id)
-
-        if path.startswith("/v1/documents/") and path.endswith("/status") and method == "GET":
-
-            doc_id = path[len("/v1/documents/"):-len("/status")]
-
-            return self.document_handler.get_document_status(doc_id, user_id)
-
-        if path.startswith("/v1/documents/") and path.endswith("/source") and method == "GET":
-
-            doc_id = path[len("/v1/documents/"):-len("/source")]
-
-            return self.document_handler.get_document_source(doc_id, params, user_id)
-
-        if path.startswith("/v1/documents/") and method == "GET":
-
-            doc_id = path[len("/v1/documents/"):]
-
-            return self.document_handler.get_document(doc_id, user_id)
-
-        if path.startswith("/v1/documents/") and method == "PATCH":
-
-            doc_id = path[len("/v1/documents/"):]
-
-            return self.document_handler.update_document(doc_id, body, user_id)
-
-        if path.startswith("/v1/documents/") and method == "DELETE":
-
-            doc_id = path[len("/v1/documents/"):]
-
-            return self.document_handler.delete_document(doc_id, user_id)
-
-        # --- Uploads ---
-
-        if path == "/v1/uploads" and method == "POST":
-
-            return self.upload_handler.upload_file(body, user_id)
-
-        if path.startswith("/v1/uploads/") and method == "GET":
-
-            doc_id = path[len("/v1/uploads/"):]
-
-            return self.upload_handler.get_upload_status(doc_id, user_id)
-
-        # --- Search ---
-
-        if path == "/v1/search" and method == "POST":
-
-            return self.search_handler.search(body, user_id)
-
-        if path == "/v1/search/semantic" and method == "POST":
-
-            return self.search_handler.search_semantic(body, user_id)
-
-        if path == "/v1/search/keyword" and method == "POST":
-
-            return self.search_handler.search_keyword(body, user_id)
-
-        if path == "/v1/search/hybrid" and method == "POST":
-
-            return self.search_handler.search_hybrid(body, user_id)
-
-        # --- Answers ---
-
-        if path == "/v1/answers" and method == "POST":
-
-            return self.answer_handler.answer(body, user_id)
-
-        # --- Admin ---
-
-        if path == "/v1/jobs" and method == "GET":
-
-            return self.admin_handler.list_jobs(params, user_id)
-
-        if path == "/v1/system" and method == "GET":
-            if not self.auth_handler.is_admin(user_id):
-                return self.auth_handler.error('Administrator access required.', 403)
-            return self.admin_handler.get_system_info(user_id)
-
-        if path == "/v1/reindex" and method == "POST":
-
-            return self.admin_handler.reindex(body, user_id)
-
-        if path == "/v1/reembed" and method == "POST":
-
-            return self.admin_handler.reembed(body, user_id)
-
-        if path == "/v1/reparse" and method == "POST":
-
-            return self.admin_handler.reparse(body, user_id)
-
-        if path == "/v1/reocr" and method == "POST":
-
-            return self.admin_handler.reocr(body, user_id)
-
-        if path == "/v1/process" and method == "POST":
-
-            return self.admin_handler.process_document(body, user_id)
-
-        # --- 404 ---
-
-        return ApiResponse.err_response(
-
-            ApiError(
-
-                code="NOT_FOUND",
-
-                message=f"Unknown endpoint: {method} {path}",
-
-                category=ErrorCategory.NOT_FOUND,
-
-            ),
-
-            status=404,
-
-        )
+        return router.dispatch(method, path, params, body, token)
 
     # ------------------------------------------------------------------
 
@@ -1076,9 +848,20 @@ class PlatformAPI:
 
         )
 
+        self.router = ApiRouter(
+            auth_handler=getattr(handler_cls, "auth_handler", None),
+            vault_handler=getattr(handler_cls, "vault_handler", None),
+            document_handler=getattr(handler_cls, "document_handler", None),
+            upload_handler=getattr(handler_cls, "upload_handler", None),
+            search_handler=getattr(handler_cls, "search_handler", None),
+            answer_handler=getattr(handler_cls, "answer_handler", None),
+            admin_handler=getattr(handler_cls, "admin_handler", None),
+            health_handler=getattr(handler_cls, "health_handler", None),
+            setup_handler=getattr(handler_cls, "setup_handler", None),
+        )
         from legal_platform.web import WebApplication
         from cheroot.wsgi import Server
-        self._application = WebApplication(handler_cls, self)
+        self._application = WebApplication(self.router, self)
         self._server = Server((self.host, self.port), self._application, numthreads=8, max=16,
                               timeout=30, shutdown_timeout=5, request_queue_size=32)
         import logging
