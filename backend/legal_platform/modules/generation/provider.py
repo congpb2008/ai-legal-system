@@ -28,70 +28,7 @@ from urllib.parse import urlparse
 # ---------------------------------------------------------------------------
 
 
-# Loopback / link-local / private networks that must never be reached by
-# outbound provider requests (SSRF protection). The default Ollama endpoint
-# (localhost) is allowed only when explicitly configured via the setup wizard.
-_PRIVATE_NETWORKS = [
-    "127.0.0.0/8",
-    "10.0.0.0/8",
-    "172.16.0.0/12",
-    "192.168.0.0/16",
-    "169.254.0.0/16",   # link-local
-    "::1/128",
-    "fc00::/7",          # unique local
-    "fe80::/10",         # link-local IPv6
-]
-
-
-def _is_loopback_or_private(host: str) -> bool:
-    """Return True if a host resolves to a loopback/private address."""
-    try:
-        addr = ip_address(host)
-    except ValueError:
-        return False
-    return any(addr in ip_network(net) for net in _PRIVATE_NETWORKS)
-
-
-def validate_provider_url(url: str) -> tuple[bool, str]:
-    """Validate a provider base URL for safety (SSRF mitigation).
-
-    Returns (True, "") if the URL is acceptable, or (False, reason) otherwise.
-
-    Rules:
-        - Must be http/https.
-        - Must not contain a username/password (credential leakage).
-        - Must not resolve to a loopback/private address unless the host is
-          explicitly localhost (the default Ollama endpoint is permitted).
-    """
-    if not url:
-        return False, "URL is required."
-    try:
-        parsed = urlparse(url)
-    except ValueError:
-        return False, "Invalid URL."
-    if parsed.scheme not in ("http", "https"):
-        return False, "Provider URL must use http or https."
-    if parsed.username or parsed.password:
-        return False, "Provider URL must not contain embedded credentials."
-    if not parsed.hostname:
-        return False, "Provider URL must include a host."
-    # Allow explicit localhost (Ollama default); block other loopback/private hosts
-    host = parsed.hostname.lower()
-    if host in ("localhost", "127.0.0.1", "::1"):
-        return True, ""
-    if _is_loopback_or_private(host):
-        return False, "Provider URL must not point to a private/loopback address."
-    try:
-        addresses = {
-            item[4][0]
-            for item in socket.getaddrinfo(host, parsed.port or 443, type=socket.SOCK_STREAM)
-        }
-    except OSError:
-        addresses = set()
-    for address in addresses:
-        if _is_loopback_or_private(address):
-            return False, "Provider hostname resolves to a private/loopback address."
-    return True, ""
+from legal_platform.provider_http import validate_provider_url, provider_urlopen
 
 
 @dataclass
@@ -110,6 +47,8 @@ class ProviderConfig:
     max_tokens: int = 4096
     temperature: float = 0.1
     reasoning_effort: str = ""
+    embedding_model: str = "bge-m3"
+    allow_lan: bool = False
 
     def to_safe_dict(self) -> dict[str, Any]:
         """Return a dict suitable for status/UI display — no secrets."""
@@ -122,6 +61,8 @@ class ProviderConfig:
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
             "has_api_key": bool(self.api_key),
+            "embedding_model": self.embedding_model,
+            "allow_lan": self.allow_lan,
         }
 
 
@@ -256,7 +197,7 @@ class OpenAICompatibleProvider:
         url = f"{self.config.base_url.rstrip('/')}/chat/completions"
 
         # Validate the URL for SSRF safety before making the request
-        valid, reason = validate_provider_url(self.config.base_url)
+        valid, reason = validate_provider_url(self.config.base_url, allow_lan=self.config.allow_lan)
         if not valid:
             raise GenerationProviderError(f"Invalid provider URL: {reason}")
 
@@ -270,7 +211,7 @@ class OpenAICompatibleProvider:
         req = urllib_request.Request(url, data=body, headers=headers, method="POST")
 
         try:
-            with urllib_request.urlopen(req, timeout=self.config.timeout_seconds) as resp:
+            with provider_urlopen(req, timeout=self.config.timeout_seconds, allow_lan=self.config.allow_lan) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except URLError as e:
             raise GenerationProviderError(
@@ -308,7 +249,7 @@ class OpenAICompatibleProvider:
     def check_connectivity(self) -> tuple[bool, str]:
         """Check whether the provider is reachable by listing models."""
         # Validate the URL for SSRF safety before making the request
-        valid, reason = validate_provider_url(self.config.base_url)
+        valid, reason = validate_provider_url(self.config.base_url, allow_lan=self.config.allow_lan)
         if not valid:
             return False, f"Invalid provider URL: {reason}"
 
@@ -319,7 +260,7 @@ class OpenAICompatibleProvider:
 
         try:
             req = urllib_request.Request(url, headers=headers)
-            with urllib_request.urlopen(req, timeout=self.config.timeout_seconds) as resp:
+            with provider_urlopen(req, timeout=self.config.timeout_seconds, allow_lan=self.config.allow_lan) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
         except URLError as e:
             return False, f"Connection failed: {e.reason}"
@@ -350,11 +291,9 @@ class OpenAICompatibleProvider:
 
 def _data_dir() -> Path:
     """Return the same durable data root used by the production server."""
-    configured = os.environ.get("LEGAL_PLATFORM_DATA_DIR")
-    if configured:
-        return Path(configured).expanduser().resolve()
-    project_root = Path(__file__).resolve().parents[4]
-    return (project_root / "storage").resolve()
+    from legal_platform.paths import data_root
+    return data_root()
+
 
 
 def _config_path() -> Path:
@@ -401,12 +340,15 @@ def load_config() -> ProviderConfig:
     if env_reasoning and "reasoning_effort" not in data:
         data["reasoning_effort"] = env_reasoning.strip().lower()
 
+    if 'allow_lan' not in data:
+        data['allow_lan'] = os.environ.get('LEGAL_PLATFORM_PROVIDER_ALLOW_LAN', '').lower() in ('1', 'true')
     return ProviderConfig(**data) if data else ProviderConfig()
 
 
 def save_config(config: ProviderConfig) -> None:
     """Save the provider configuration to disk."""
     path = _config_path()
+    (path.parent / '.local-mode').unlink(missing_ok=True)
     path.write_text(json.dumps({
         "provider_type": config.provider_type,
         "base_url": config.base_url,
@@ -416,14 +358,19 @@ def save_config(config: ProviderConfig) -> None:
         "max_tokens": config.max_tokens,
         "temperature": config.temperature,
         "reasoning_effort": config.reasoning_effort,
+        "embedding_model": config.embedding_model,
+        "allow_lan": config.allow_lan,
     }, indent=2))
-    path.chmod(0o600)
+    from legal_platform.operations import restrict_file
+    restrict_file(path)
 
 
 def is_configured() -> bool:
     """Check whether the application has been configured with a provider."""
-    # Check the sentinel file first (set by mark_configured / setup complete)
+    # An explicit local-mode choice overrides environment provider defaults.
     data_dir = _data_dir()
+    if (data_dir / '.local-mode').exists():
+        return False
     if (data_dir / ".configured").exists():
         return True
     path = _config_path()
@@ -453,4 +400,4 @@ def mark_configured() -> None:
 def is_first_run() -> bool:
     """Check whether this is the first run (no configuration exists)."""
     data_dir = _data_dir()
-    return not (data_dir / ".configured").exists()
+    return not is_configured()

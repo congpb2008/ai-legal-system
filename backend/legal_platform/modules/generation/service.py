@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import time
 import re
+import json
 from pathlib import Path
 from typing import Optional
 from uuid import UUID, uuid4
@@ -57,7 +58,8 @@ from legal_platform.storage.eventlog import init_audit_log, log_event
 
 def _load_system_prompt() -> str:
     """Load the authoritative system prompt from design/system-prompt.md."""
-    path = Path(__file__).resolve().parent.parent.parent.parent.parent / "design" / "system-prompt.md"
+    from legal_platform.paths import asset_root
+    path = asset_root() / 'design' / 'system-prompt.md'
     if path.exists():
         return path.read_text(encoding="utf-8")
     return "You are a legal knowledge assistant. Answer based on the provided evidence."
@@ -193,6 +195,21 @@ class GenerationService:
         if not evidence_items:
             return self._no_evidence_answer(request_id, query, start_time)
 
+        # Provider-assisted answers are assembled only from verified quotations.
+        from legal_platform.grounding import SELECTION_PROMPT, verify_selections, render_quotations
+        selection_warning = None
+        provider = self._resolve_provider()
+        if provider is not None:
+            evidence_text = json.dumps([{'evidence_id': str(e.id), 'document_id': str(e.document_id), 'document_title': getattr(self.registry.get_document(e.document_id), 'title', ''), 'document_number': getattr(self.registry.get_document(e.document_id), 'document_number', ''), 'text': e.text} for e in evidence_items], ensure_ascii=False)
+            try:
+                raw = provider.generate(system_prompt=SELECTION_PROMPT, evidence_text=evidence_text, question=query)
+                evidence_items = verify_selections(raw, evidence_items)
+            except (GenerationProviderError, ValueError, TypeError, KeyError):
+                selection_warning = 'AI selection could not be verified. Showing retrieved source passages for review.'
+            if not evidence_items:
+                return self._no_evidence_answer(request_id, query, start_time)
+        evidence_items = evidence_items[:5]
+
         # --- Build response from evidence ---
         citations: list[Citation] = []
         evidence_refs: list[EvidenceReference] = []
@@ -221,18 +238,18 @@ class GenerationService:
             ))
 
         # --- Generate response text ---
-        response_text = self._generate_response(query, evidence_items, citations)
-        if self._response_reports_insufficient_evidence(response_text):
-            # The model has concluded that the retrieved neighbours do not
-            # answer the question.  Do not expose a contradictory SUCCESS
-            # badge or decorative citations to unrelated evidence.
-            return self._no_evidence_answer(request_id, query, start_time)
+        response_text = render_quotations(evidence_items, self.registry)
+        limitations.append(Limitation(description='Exact source quotations. Relevance and completeness require review; this is not a determination of current law.'))
+        if selection_warning:
+            limitations.append(Limitation(description=selection_warning))
+        if any(not (self.registry.get_document(e.document_id) and getattr(getattr(self.registry.get_document(e.document_id), 'metadata', None), 'effective_date', None)) for e in evidence_items):
+            limitations.append(Limitation(description='One or more sources have no verified effective date.'))
 
         # --- Determine confidence from evidence quality ---
         confidence = self._compute_confidence(evidence_items)
 
         # --- Check if evidence is incomplete ---
-        status = AnswerStatus.SUCCESS
+        status = AnswerStatus.PARTIAL if selection_warning else AnswerStatus.SUCCESS
         if confidence.level in (ConfidenceLevel.LOW,):
             status = AnswerStatus.PARTIAL
             limitations.append(Limitation(

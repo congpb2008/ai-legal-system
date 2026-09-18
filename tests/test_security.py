@@ -151,33 +151,12 @@ class TestUnauthenticatedAccess:
             api.stop()
             t.join(timeout=2)
 
-    def test_first_run_can_save_then_complete_before_login(self):
+    def test_first_run_provider_settings_require_authenticated_admin(self):
         api, t, port = self._get_server()
         try:
-            saved, status = self._req(
-                port,
-                "POST",
-                "/api/v1/setup/config",
-                {
-                    "base_url": "https://provider.example/v1",
-                    "model": "configured-model",
-                    "timeout_seconds": 90,
-                },
-            )
-            assert status == 200
-            assert saved["success"] is True
-
-            completed, status = self._req(
-                port,
-                "POST",
-                "/api/v1/setup/complete",
-                {},
-            )
-            assert status == 200
-            assert completed["data"]["configured"] is True
-
-            _, status = self._req(port, "GET", "/api/v1/setup/config")
-            assert status == 401
+            for endpoint in ('config', 'test', 'complete'):
+                _, status = self._req(port, 'POST', '/api/v1/setup/' + endpoint, {'base_url':'https://provider.example/v1'})
+                assert status == 401
         finally:
             api.stop()
             t.join(timeout=2)
@@ -192,11 +171,14 @@ class TestUnauthenticatedAccess:
             assert status == 401
             assert data["error"]["code"] == "NOT_AUTHENTICATED"
 
+            import os
+            created = api._auth.register({'username':'admin','password':'correct-test-password','code':(Path(os.environ['LEGAL_PLATFORM_DATA_DIR'])/'setup-code.txt').read_text()}, bootstrap=True)
+            assert created.success
             login, status = self._req(
                 port,
                 "POST",
                 "/api/v1/auth/login",
-                {"user_id": "admin", "password": "admin"},
+                {"user_id": "admin", "password": "correct-test-password"},
             )
             assert status == 200
             data, status = self._req(
@@ -275,10 +257,20 @@ class TestSecretMasking:
         )
 
         save_config(ProviderConfig(api_key="test-secret"))
-        assert _config_path().stat().st_mode & 0o077 == 0
+        import os
+        if os.name == 'nt':
+            import win32security
+            sd = win32security.GetFileSecurity(str(_config_path()), win32security.DACL_SECURITY_INFORMATION)
+            acl = sd.GetSecurityDescriptorDacl()
+            forbidden = {'S-1-1-0', 'S-1-5-32-545', 'S-1-5-11'}  # Everyone, Users, authenticated users
+            assert all(win32security.ConvertSidToStringSid(acl.GetAce(i)[2]) not in forbidden for i in range(acl.GetAceCount()))
+        else:
+            assert _config_path().stat().st_mode & 0o077 == 0
 
-    def test_setup_save_refreshes_runtime_clients(self):
+    def test_setup_save_refreshes_runtime_clients(self, monkeypatch):
         from legal_platform.api.handlers import SetupHandler
+        monkeypatch.setattr('legal_platform.provider_http.socket.getaddrinfo',
+                            lambda *a, **k: [(2, 1, 6, '', ('93.184.216.34', 443))])
 
         refreshed = []
         handler = SetupHandler(on_config_saved=refreshed.append)

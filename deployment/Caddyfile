@@ -1,0 +1,7 @@
+{$LEGAL_PLATFORM_DOMAIN} {
+    encode zstd gzip
+    reverse_proxy legal-platform:8080 {
+        # Replace the incoming value rather than passing a user-provided chain.
+        header_up X-Forwarded-For {remote_host}
+    }
+}

@@ -1,3 +1,5 @@
+> Historical prototype documentation. For the implemented LAN release, use the [Windows quickstart](../../WINDOWS-QUICKSTART.md) and [maintainer guide](../../MAINTAINER-GUIDE.md). Account, setup, UI and deployment instructions below may be outdated.
+
 # Hướng dẫn Phát triển — Nền tảng Pháp lý
 
 Hướng dẫn này dành cho lập trình viên muốn làm việc trên mã nguồn Nền tảng Pháp lý.

@@ -1,0 +1,6 @@
+{
+  "name": "legal-library-browser-checks",
+  "private": true,
+  "scripts": {"test": "node run.mjs"},
+  "devDependencies": {"playwright": "1.62.1"}
+}

@@ -68,8 +68,8 @@ class OcrConfidence:
         engine: name of the OCR engine used.
     """
 
-    page_average: float
-    page_min: float
+    page_average: Optional[float]
+    page_min: Optional[float]
     line_average: Optional[float] = None
     engine: str = "unknown"
 

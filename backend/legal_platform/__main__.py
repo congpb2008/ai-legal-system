@@ -53,11 +53,16 @@ def main(argv: Optional[list[str]] = None) -> None:
     # Late import so --help is fast even if platform deps are missing
     from legal_platform.api.server import PlatformAPI
 
-    api = PlatformAPI(host=args.host, port=args.port)
-    try:
-        api.start()
-    except KeyboardInterrupt:
-        print("\nShutdown requested.")
+    from legal_platform.operations import installation_lock
+    from legal_platform.paths import data_root
+    with installation_lock(data_root()):
+        api = PlatformAPI(host=args.host, port=args.port)
+        try:
+            api.start()
+        except KeyboardInterrupt:
+            print("\nShutdown requested.")
+        finally:
+            api.stop()
 
 
 if __name__ == "__main__":

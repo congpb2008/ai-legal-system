@@ -234,7 +234,9 @@ class TestGeneration:
         )
         answer = service.generate("question", evidence=sample_evidence)
 
-        assert answer.response.content == "Configured provider answer"
+        assert 'Configured provider answer' not in answer.response.content
+        assert sample_evidence[0].text in answer.response.content
+        assert answer.status == AnswerStatus.PARTIAL
         assert answer.metadata.generation_model == "configured-model"
         assert len(service.provider.calls) == 1
 
@@ -263,9 +265,11 @@ class TestGeneration:
         generation_service.generate("question", evidence=sample_evidence)
 
         evidence_text = calls[0]["evidence_text"]
-        assert "Tài liệu: Nghị định 214/2025/NĐ-CP" in evidence_text
-        assert "Vị trí: Điều 1" in evidence_text
-        assert "Nội dung:" in evidence_text
+        import json
+        passages=json.loads(evidence_text)
+        assert passages[0]['document_title'] == 'Nghị định 214/2025/NĐ-CP'
+        assert passages[0]['document_id'] == str(sample_evidence[0].document_id)
+        assert passages[0]['text'] == sample_evidence[0].text
 
     def test_provider_no_evidence_conclusion_clears_success_and_citations(
         self, generation_service, sample_evidence, monkeypatch
@@ -274,10 +278,7 @@ class TestGeneration:
             config = ProviderConfig(model="honest-model")
 
             def generate(self, **kwargs):
-                return (
-                    "Dựa trên các bằng chứng được cung cấp, không có thông tin "
-                    "nào về mức phạt cho hành vi này."
-                )
+                return '{"answerable":false,"passages":[]}'
 
         monkeypatch.setattr(
             generation_service.registry,
@@ -304,8 +305,10 @@ class TestGeneration:
                 raise GenerationProviderError("backend unavailable")
 
         generation_service.provider = FailingProvider()
-        with pytest.raises(GenerationProviderError, match="backend unavailable"):
-            generation_service.generate("question", evidence=sample_evidence)
+        answer = generation_service.generate("question", evidence=sample_evidence)
+        assert answer.status == AnswerStatus.PARTIAL
+        assert sample_evidence[0].text in answer.response.content
+        assert any('AI selection could not be verified' in l.description for l in answer.limitations)
 
     def test_generate_has_citations(self, generation_service, sample_evidence):
         answer = generation_service.generate(

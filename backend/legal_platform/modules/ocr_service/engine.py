@@ -266,7 +266,7 @@ class Pdf2ImageTesseractEngine:
     def __init__(self, *, dpi: int = 300, lang: str = "vie+eng"):
         self.dpi = dpi
         self.lang = lang
-        self._check_tesseract()
+        # Dependency is checked only when image OCR is needed.
 
     @staticmethod
     def _check_tesseract() -> None:
@@ -303,31 +303,29 @@ class Pdf2ImageTesseractEngine:
         except ImportError as e:
             raise OcrEngineError("pytesseract is not installed") from e
 
-        try:
-            from pdf2image import convert_from_bytes
-        except ImportError as e:
-            raise OcrEngineError("pdf2image is not installed") from e
-
-        # Write PDF bytes to a temp file for pdf2image
-        import tempfile
-        tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
-        try:
-            tmp.write(content)
-            tmp.close()
-
-            images = convert_from_bytes(
-                content,
-                dpi=self.dpi,
-                fmt="png",
-                grayscale=True,
-            )
-        except Exception as e:
-            raise OcrEngineError(f"Failed to render PDF pages: {e}") from e
-        finally:
-            Path(tmp.name).unlink(missing_ok=True)
-
-        if not images:
-            raise OcrEngineError("PDF rendered zero pages")
+        import os
+        import fitz
+        from PIL import Image
+        from .config import tesseract_executable, recognize_image
+        executable = tesseract_executable()
+        if not executable:
+            raise OcrEngineError('Scanned pages need Tesseract with Vietnamese language data. Ask the server administrator to enable OCR, then retry this document.')
+        pdf = fitz.open(stream=content, filetype='pdf')
+        if len(pdf) > 500:
+            pdf.close()
+            raise OcrEngineError('PDF exceeds the 500-page processing limit.')
+        def rendered_pages():
+            try:
+                for page in pdf:
+                    if page.rect.width * page.rect.height * (self.dpi/72)**2 > 40000000:
+                        raise OcrEngineError('Page dimensions exceed the OCR limit.')
+                    pix = page.get_pixmap(matrix=fitz.Matrix(self.dpi/72, self.dpi/72), colorspace=fitz.csGRAY)
+                    if pix.width * pix.height > 40000000:
+                        raise OcrEngineError('Page dimensions exceed the OCR limit.')
+                    yield Image.frombytes('L', (pix.width, pix.height), pix.samples)
+            finally:
+                pdf.close()
+        images = rendered_pages()
 
         pages: list[OcrPage] = []
         total_confidence = 0.0
@@ -339,11 +337,7 @@ class Pdf2ImageTesseractEngine:
         for page_num, image in enumerate(images):
             try:
                 # OCR with detailed output (per-line confidence)
-                ocr_data = pytesseract.image_to_data(
-                    image,
-                    lang=self.lang,
-                    output_type=pytesseract.Output.DICT,
-                )
+                ocr_data = recognize_image(image, self.lang)
 
                 lines: list[OcrLine] = []
                 page_text_parts: list[str] = []
@@ -485,39 +479,31 @@ class AutoOcrEngine:
             version_id=version_id,
         )
 
-        # Check if the digital result has meaningful text
-        total_chars = sum(len(page.text) for page in digital_result.pages)
-        total_pages = digital_result.page_count
-
-        if total_pages > 0 and total_chars >= self.MIN_TEXT_CHARS_FOR_DIGITAL:
-            # Digital extraction succeeded — this is a digital PDF
-            digital_result.ocr_mode = "digital"
+        if not digital_result.pages:
+            raise OcrEngineError('The PDF has no readable pages.')
+        low_text = {p.page_number for p in digital_result.pages if len(p.text.strip()) < self.MIN_TEXT_CHARS_FOR_DIGITAL}
+        if not low_text:
             return digital_result
-
-        # Phase 2: fall back to image OCR
         if self._image is None:
-            raise OcrEngineError(
-                "Document appears to be scanned (no embedded text found), "
-                "but no image OCR engine is configured. "
-                "Install tesseract-ocr to enable scanned document processing."
-            )
-
-        try:
-            image_result = self._image.extract(
-                content=content,
-                document_id=document_id,
-                version_id=version_id,
-            )
-            image_result.ocr_mode = "image"
-            # Carry over any warnings from the digital attempt
-            image_result.warnings = [
-                *digital_result.warnings,
-                *image_result.warnings,
-            ]
-            return image_result
-        except OcrEngineError:
-            # Re-raise with context
-            raise OcrEngineError(
-                "Document appears to be scanned but OCR engine failed. "
-                "Install tesseract-ocr: sudo apt install tesseract-ocr"
-            )
+            raise OcrEngineError('Some PDF pages have little or no embedded text. Configure image OCR or upload a text PDF; no pages have been silently omitted.')
+        if hasattr(self._image, 'extract_pages'):
+            image_result = self._image.extract_pages(content=content, page_numbers=low_text,
+                document_id=document_id, version_id=version_id)
+        else:
+            image_result = self._image.extract(content=content, document_id=document_id, version_id=version_id)
+        by_page = {p.page_number: p for p in image_result.pages}
+        combined = []
+        for page in digital_result.pages:
+            if page.page_number in low_text:
+                replacement = by_page.get(page.page_number)
+                if replacement is None or not replacement.text.strip():
+                    raise OcrEngineError(f'Page {page.page_number} could not be read. Check whether it is blank or upload a clearer scan, then retry. The document has not been marked ready.')
+                combined.append(replacement)
+            else:
+                combined.append(page)
+        image_result.pages = combined
+        image_result.total_pages = len(combined)
+        image_result.ocr_mode = 'image' if len(low_text) == len(combined) else 'hybrid'
+        image_result.warnings = [*digital_result.warnings, *image_result.warnings,
+            'Scanned text was recognized automatically. Verify figures, dates and tables against the original.']
+        return image_result

@@ -1,0 +1,10 @@
+{
+  "mode": "vision",
+  "base_url": "http://127.0.0.1:57843/v1",
+  "model": "test-vision",
+  "api_key": "synthetic-ocr-secret",
+  "allow_lan": false,
+  "timeout_seconds": 120,
+  "max_tokens": 8192,
+  "max_vision_pages": 50
+}

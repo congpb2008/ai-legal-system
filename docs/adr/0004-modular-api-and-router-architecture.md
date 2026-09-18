@@ -1,0 +1,3 @@
+# Modular API and Router Architecture
+
+The 0.2.x LAN release added persistent accounts, Cheroot WSGI serving, and security defenses, but accumulated architectural debt: a 2,177-line monolithic `handlers.py`, an uninitialized `object.__new__` router bypass in `web.py`, and inline SQL mixed with WSGI transport. We decided to decompose `handlers.py` into focused domain modules under `legal_platform/api/handlers/`, extract cross-cutting middleware into `middleware.py`, introduce an explicit `ApiRouter`, and encapsulate answer history persistence in `HistoryRepository`. This provides clean separation of concerns, testability, and deep module boundaries while preserving 100% backward compatibility for all HTTP routes, contracts, and SQLite storage.

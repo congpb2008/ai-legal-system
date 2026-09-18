@@ -1,1717 +1,298 @@
-/* Banking Legal Platform — Web UI application
-   All operations go through the Platform API (api.js).
-   The UI contains NO business logic — it only renders API responses. */
-
-const app = {
-  state: {
-    user: null,
-    currentPage: 'home',
-    vaults: [],
-    documents: [],
-    searchResults: null,
-    answer: null,
-    jobs: [],
-    systemInfo: null,
-    documentToDelete: null,
-    folderFiles: [],
-  },
-
-  // ------------------------------------------------------------------
-  // Initialization
-  // ------------------------------------------------------------------
-
-  async init() {
-    this.auth = new AuthModule();
-    this.router = new Router();
-    window.addEventListener('hashchange', () => this.router.handleRoute());
-
-    // Sidebar toggle for mobile
-    this._initSidebar();
-
-    // Check if already authenticated
-    if (api.token) {
-      const resp = await api.me();
-      if (resp.success) {
-        this.state.user = resp.data;
-        this.auth.onLogin(resp.data, false);
-      } else {
-        api.setToken(null);
-      }
-    }
-
-    // Check first-run status — show setup wizard if not configured
-    if (!this.state.user) {
-      try {
-        const setupResp = await api.setupStatus();
-        if (setupResp.success && setupResp.data.first_run) {
-          document.getElementById('loginModal').style.display = 'none';
-          this.showPage('setup');
-          this.renderSetup();
-          return;
-        }
-      } catch(e) { /* ignore — show normal UI */ }
-    }
-
-    // Show login modal if not authenticated
-    if (!this.state.user) {
-      document.getElementById('loginModal').style.display = 'flex';
-    }
-
-    this.router.handleRoute();
-  },
-
-  _initSidebar() {
-    const toggle = document.getElementById('sidebarToggle');
-    const overlay = document.getElementById('sidebarOverlay');
-    const sidebar = document.getElementById('sidebar');
-    if (!toggle || !overlay || !sidebar) return;
-    toggle.addEventListener('click', () => {
-      const isOpen = sidebar.classList.toggle('open');
-      overlay.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
-    overlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('open');
-    });
-    // Close sidebar on nav click (mobile)
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          sidebar.classList.remove('open');
-          overlay.classList.remove('open');
-        }
-      });
-    });
-  },
-
-  // ------------------------------------------------------------------
-  // Setup Wizard (Task 026)
-  // ------------------------------------------------------------------
-
-  async renderSetup() {
-    const el = document.getElementById('page-setup');
-    el.innerHTML = `
-      <div class="card" style="max-width:600px;margin:40px auto">
-        <h1>⚖️ Chào mừng đến với Legal Platform</h1>
-        <p class="muted">Vui lòng cấu hình dịch vụ AI trước khi sử dụng.</p>
-
-        <form id="setupForm" onsubmit="return app.handleSetupSubmit(event)">
-          <div class="form-group">
-            <label for="setupMode">Chiến lược AI</label>
-            <select id="setupMode" class="form-select" onchange="app.onSetupModeChange()">
-              <option value="cloud">☁️ Cloud — Sử dụng dịch vụ AI từ xa</option>
-              <option value="local">💻 Local — Ollama/OpenAI-compatible trên máy này</option>
-            </select>
-          </div>
-
-          <div id="cloudSettings">
-            <div class="form-group">
-              <label for="setupBaseUrl">Base URL <span aria-label="Bắt buộc">*</span></label>
-              <input type="url" id="setupBaseUrl" class="form-input"
-                     value="http://localhost:11434/v1"
-                     placeholder="http://localhost:11434/v1" required aria-required="true">
-              <div class="form-hint">Ví dụ: https://api.openai.com/v1 hoặc http://localhost:11434/v1</div>
-            </div>
-            <div class="form-group">
-              <label for="setupApiKey">API Key</label>
-              <input type="password" id="setupApiKey" class="form-input"
-                     placeholder="sk-... (để trống nếu không cần)">
-              <div class="form-hint">API key của provider. Lưu trữ an toàn, không bao giờ hiển thị.</div>
-            </div>
-            <div class="form-group">
-              <label for="setupModel">Model <span aria-label="Bắt buộc">*</span></label>
-              <input type="text" id="setupModel" class="form-input"
-                     value="llama3" placeholder="llama3, gpt-4, etc." required aria-required="true">
-            </div>
-            <div class="form-group">
-              <label for="setupTimeout">Timeout (giây)</label>
-              <input type="number" id="setupTimeout" class="form-input" value="60" min="5" max="300">
-            </div>
-            <div class="form-group">
-              <label for="setupMaxTokens">Ngân sách token trả lời</label>
-              <input type="number" id="setupMaxTokens" class="form-input" value="4096" min="256" max="16384" step="256">
-              <div class="form-hint">Model suy luận có thể cần 4096 token để tạo phần trả lời nhìn thấy được.</div>
-            </div>
-            <div class="form-group">
-              <label for="setupReasoningEffort">Mức suy luận</label>
-              <select id="setupReasoningEffort" class="form-select">
-                <option value="">Tự động theo provider</option>
-                <option value="none">Tắt — phù hợp hỏi đáp dựa trên bằng chứng</option>
-                <option value="low">Thấp</option>
-                <option value="medium">Trung bình</option>
-                <option value="high">Cao</option>
-              </select>
-              <div class="form-hint">Dùng “Tắt” cho Ollama/Qwen nếu model chỉ suy luận mà không trả văn bản trong giới hạn token.</div>
-            </div>
-            <div class="flex gap-8">
-              <button type="button" class="btn btn-outline" id="testBtn" onclick="app.runSetupTest()">🔌 Kiểm tra kết nối</button>
-              <div id="testResult" class="text-sm" style="align-self:center"></div>
-            </div>
-          </div>
-
-          <div class="form-error" id="setupError" style="display:none" role="alert"></div>
-          <div class="modal-actions mt-16">
-            <button type="submit" class="btn btn-primary" id="setupSubmitBtn">✅ Hoàn tất cài đặt</button>
-          </div>
-        </form>
-      </div>
-    `;
-
-    try {
-      const response = await api.getSetupConfig();
-      if (response.success && response.data) {
-        const config = response.data;
-        if (config.base_url) document.getElementById('setupBaseUrl').value = config.base_url;
-        if (config.model) document.getElementById('setupModel').value = config.model;
-        if (config.timeout_seconds) document.getElementById('setupTimeout').value = config.timeout_seconds;
-        if (config.max_tokens) document.getElementById('setupMaxTokens').value = config.max_tokens;
-        document.getElementById('setupReasoningEffort').value = config.reasoning_effort || '';
-        if (config.has_api_key) {
-          document.getElementById('setupApiKey').placeholder = 'Đã lưu an toàn — để trống để giữ nguyên';
-        }
-        document.getElementById('setupMode').value = config.base_url?.includes('localhost')
-          ? 'local'
-          : 'cloud';
-      }
-    } catch (error) {
-      // Defaults remain usable if a first-run config has never been saved.
-    }
-  },
-
-  onSetupModeChange() {
-    const mode = document.getElementById('setupMode').value;
-    document.getElementById('cloudSettings').style.display = 'block';
-    if (mode === 'local') {
-      document.getElementById('setupBaseUrl').value = 'http://localhost:11434/v1';
-    }
-  },
-
-  // ------------------------------------------------------------------
-  // Delete confirmation
-  // ------------------------------------------------------------------
-
-  confirmDelete(docId) {
-    this.state.documentToDelete = docId;
-    document.getElementById('deleteModal').style.display = 'flex';
-  },
-
-  cancelDelete() {
-    this.state.documentToDelete = null;
-    document.getElementById('deleteModal').style.display = 'none';
-  },
-
-  async executeDelete() {
-    const docId = this.state.documentToDelete;
-    if (!docId) return;
-
-    const errorEl = document.getElementById('deleteModalError');
-    const btn = document.getElementById('confirmDeleteBtn');
-    btn.disabled = true;
-
-    try {
-      const resp = await api.deleteDocument(docId);
-      if (resp.success) {
-        this.showToast('Tài liệu đã được lưu trữ; bản gốc vẫn được giữ lại.', 'success');
-        await this.renderDocuments(); // Refresh the list
-      } else {
-        errorEl.textContent = resp.error?.message || 'Không thể lưu trữ tài liệu';
-        errorEl.style.display = 'block';
-      }
-    } catch (err) {
-      errorEl.textContent = `Lỗi: ${err.message}`;
-      errorEl.style.display = 'block';
-    } finally {
-      this.state.documentToDelete = null;
-      document.getElementById('deleteModal').style.display = 'none';
-      btn.disabled = false;
-    }
-  },
-
-  // ------------------------------------------------------------------
-  // Folder upload
-  // ------------------------------------------------------------------
-
-  showFolderUpload() {
-    this.state.folderFiles = [];
-    document.getElementById('folderUploadModal').style.display = 'flex';
-    document.getElementById('folderInput').value = '';
-    document.getElementById('multiFileInput').value = '';
-    document.getElementById('folderUploadError').style.display = 'none';
-    document.getElementById('folderUploadStatus').innerHTML = '';
-    document.getElementById('folderFilePreview').innerHTML = '';
-  },
-
-  cancelFolderUpload() {
-    document.getElementById('folderUploadModal').style.display = 'none';
-  },
-
-  async handleFolderInputChange(event) {
-    const files = Array.from(event.target.files);
-    this.state.folderFiles = files;
-    const preview = document.getElementById('folderFilePreview');
-    const supported = files
-      .map((file, index) => ({ file, index }))
-      .filter(({ file }) => !file.name.startsWith('~$') && /\.(pdf|docx)$/i.test(file.name));
-    const skipped = files.length - supported.length;
-    preview.innerHTML = supported.length ? `
-      <h3>Thông tin từng tài liệu</h3>
-      <p class="text-sm muted">Kiểm tra tiêu đề, nhãn và mô tả trước khi tải lên.${skipped ? ` Sẽ bỏ qua ${skipped} tệp tạm/không hỗ trợ.` : ''}</p>
-      ${supported.map(({ file, index }) => {
-        const title = file.name.replace(/\.[^/.]+$/, '').replace(/^\d+\.\s*/, '').replace(/[_]+/g, ' ').trim();
-        return `
-        <fieldset class="folder-file-card" data-file-index="${index}">
-          <legend>${this.esc(file.name)}</legend>
-          <div class="form-group">
-            <label for="folderTitle${index}">Tiêu đề hiển thị</label>
-            <input id="folderTitle${index}" data-field="title" class="form-input" value="${this.esc(title)}" required>
-          </div>
-          <div class="form-group">
-            <label for="folderNumber${index}">Số hiệu / mã</label>
-            <input id="folderNumber${index}" data-field="document_number" class="form-input">
-          </div>
-          <div class="form-group">
-            <label for="folderTags${index}">Nhãn / thẻ</label>
-            <input id="folderTags${index}" data-field="tags" class="form-input" placeholder="Biểu mẫu, E-HSMT, Hàng hóa" required>
-          </div>
-          <div class="form-group">
-            <label for="folderDescription${index}">Mô tả ngắn</label>
-            <textarea id="folderDescription${index}" data-field="description" class="form-textarea" required></textarea>
-          </div>
-        </fieldset>`;
-      }).join('')}
-    ` : '<p class="text-sm muted">Không có PDF hoặc DOCX hợp lệ trong lựa chọn.</p>';
-  },
-
-  async processFolderUpload() {
-    const selectedFiles = this.state.folderFiles;
-    const skippedFiles = selectedFiles.filter(file => file.name.startsWith('~$'));
-    const unsupportedFiles = selectedFiles.filter(file => {
-      const name = file.name.toLowerCase();
-      return !file.name.startsWith('~$') && !name.endsWith('.pdf') && !name.endsWith('.docx');
-    });
-    const files = selectedFiles.filter(file => {
-      const name = file.name.toLowerCase();
-      return !file.name.startsWith('~$') && (name.endsWith('.pdf') || name.endsWith('.docx'));
-    });
-    if (files.length === 0) {
-      alert(skippedFiles.length
-        ? 'Thư mục chỉ chứa tệp khóa tạm của Microsoft Office (~$); không có tài liệu để tải lên.'
-        : 'Vui lòng chọn ít nhất một tệp tin');
-      return;
-    }
-
-    const vaultId = document.getElementById('folderVault')?.value || '';
-    const authority = document.getElementById('folderAuthority')?.value.trim() || '';
-    const documentType = document.getElementById('folderType')?.value || 'INTERNAL_REGULATION';
-    const issueDate = document.getElementById('folderIssueDate')?.value || '';
-    if (!vaultId || !authority) {
-      const errorEl = document.getElementById('folderUploadError');
-      errorEl.textContent = !vaultId
-        ? 'Vui lòng chọn kho tài liệu.'
-        : 'Vui lòng nhập cơ quan ban hành cho thư mục.';
-      errorEl.style.display = 'block';
-      return;
-    }
-
-    const errorEl = document.getElementById('folderUploadError');
-    const btn = document.getElementById('startFolderUploadBtn');
-    const statusEl = document.getElementById('folderUploadStatus');
-    btn.disabled = true;
-    errorEl.style.display = 'none';
-    statusEl.innerHTML = '<div class="loading">Đang xử lý...</div>';
-
-    const results = [];
-    let successCount = 0;
-    let failureCount = 0;
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const fileIndex = selectedFiles.indexOf(file);
-      const card = document.querySelector(`.folder-file-card[data-file-index="${fileIndex}"]`);
-      const title = card?.querySelector('[data-field="title"]')?.value.trim() || '';
-      const documentNumber = card?.querySelector('[data-field="document_number"]')?.value.trim() || '';
-      const tags = this.parseTags(card?.querySelector('[data-field="tags"]')?.value || '');
-      const description = card?.querySelector('[data-field="description"]')?.value.trim() || '';
-      if (!title || tags.length === 0 || !description) {
-        errorEl.textContent = `Vui lòng hoàn thành tiêu đề, nhãn và mô tả cho ${file.name}.`;
-        errorEl.style.display = 'block';
-        btn.disabled = false;
-        return;
-      }
-      statusEl.innerHTML = `<div class="loading">Đang tải lên: ${i + 1} / ${files.length} - ${file.name}</div>`;
-
-      try {
-        const result = await this.uploadSingleFile(file, {
-          vault_id: vaultId,
-          issuing_authority: authority,
-          document_type: documentType,
-          title,
-          document_number: documentNumber,
-          tags,
-          description,
-          issue_date: issueDate,
-        });
-        if (result.success) {
-          successCount++;
-          results.push({ filename: file.name, status: 'success', document_id: result.data.document_id });
-        } else {
-          failureCount++;
-          results.push({ filename: file.name, status: 'failure', error: result.error?.message });
-        }
-      } catch (err) {
-        failureCount++;
-        results.push({ filename: file.name, status: 'failure', error: err.message });
-      }
-    }
-
-    statusEl.innerHTML = `
-      <div class="mt-16">
-        <h3>Tổng kết</h3>
-        <ul>
-          <li class="text-success">✅ Thành công: ${successCount}/${files.length}</li>
-          <li class="text-danger">❌ Thất bại: ${failureCount}/${files.length}</li>
-          ${skippedFiles.length ? `<li class="muted">⏭️ Bỏ qua tệp khóa Office (~$): ${skippedFiles.length}</li>` : ''}
-          ${unsupportedFiles.length ? `<li class="muted">⏭️ Bỏ qua định dạng không hỗ trợ: ${unsupportedFiles.length}</li>` : ''}
-        </ul>
-        ${results.filter(r => r.status === 'failure').length > 0 ? `
-          <details>
-            <summary>Xem chi tiết thất bại</summary>
-            <ul>
-              ${results.filter(r => r.status === 'failure').map(r => `
-                <li class="text-danger text-sm">${this.esc(r.filename)}: ${this.esc(r.error)}</li>
-              `).join('')}
-            </ul>
-          </details>
-        ` : ''}
-      </div>
-    `;
-
-    btn.disabled = false;
-  },
-
-  async uploadSingleFile(file, metadata = {}) {
-    const title = metadata.title || file.name
-      .replace(/\.[^/.]+$/, '')
-      .replace(/^\d+\.\s*/, '')
-      .replace(/[_]+/g, ' ')
-      .trim();
-    const vaultEl = document.getElementById('uploadVault');
-    const vaultId = metadata.vault_id || (vaultEl ? vaultEl.value : '');
-
-    // Ensure a vault is selected — get first available if none selected
-    let resolvedVaultId = vaultId;
-    if (!resolvedVaultId) {
-      try {
-        const vaultsResp = await api.listVaults();
-        if (vaultsResp.success && vaultsResp.data?.items?.length > 0) {
-          // Auto-select first vault as fallback
-          resolvedVaultId = vaultsResp.data.items[0].id;
-        } else {
-          return { success: false, status: 400, error: { code: 'NO_VAULT', message: 'No vault available. Please create a vault in the Vault tab first.' }};
-        }
-      } catch {
-        return { success: false, status: 500, error: { code: 'VAULT_ERROR', message: 'Cannot list vaults. Check connection.' }};
-      }
-    }
-
-    const result = await api.uploadFile({
-      filename: file.name,
-      title: title,
-      issuing_authority: metadata.issuing_authority || '',
-      document_type: metadata.document_type || 'INTERNAL_REGULATION',
-      vault_id: resolvedVaultId,
-      organization_id: '',  // Will be auto-assigned by the backend
-      document_number: metadata.document_number || undefined,
-      description: metadata.description || undefined,
-      tags: metadata.tags || [],
-      issue_date: metadata.issue_date || undefined,
-      file: file,
-    });
-    return result;
-  },
-
-  async runSetupTest() {
-    const btn = document.getElementById('testBtn');
-    const resultEl = document.getElementById('testResult');
-    btn.disabled = true;
-    resultEl.textContent = 'Đang kiểm tra...';
-
-    const body = {
-      base_url: document.getElementById('setupBaseUrl').value.trim(),
-      api_key: document.getElementById('setupApiKey').value.trim(),
-      model: document.getElementById('setupModel').value.trim(),
-      timeout_seconds: parseInt(document.getElementById('setupTimeout').value) || 60,
-      max_tokens: parseInt(document.getElementById('setupMaxTokens').value) || 4096,
-      reasoning_effort: document.getElementById('setupReasoningEffort').value,
-    };
-
-    try {
-      const resp = await api.testProvider(body);
-      if (resp.success && resp.data.reachable) {
-        resultEl.innerHTML = '<span class="badge badge-success">✅ Kết nối thành công</span>';
-      } else {
-        resultEl.innerHTML = `<span class="badge badge-danger">❌ ${this.esc(resp.data?.message || 'Kết nối thất bại')}</span>`;
-      }
-    } catch (err) {
-      resultEl.innerHTML = `<span class="badge badge-danger">❌ Lỗi: ${this.esc(err.message)}</span>`;
-    } finally {
-      btn.disabled = false;
-    }
-  },
-
-  async handleSetupSubmit(event) {
-    event.preventDefault();
-    const btn = document.getElementById('setupSubmitBtn');
-    const errorEl = document.getElementById('setupError');
-    const mode = document.getElementById('setupMode').value;
-
-    btn.disabled = true;
-    btn.textContent = 'Đang lưu...';
-    errorEl.style.display = 'none';
-
-    try {
-      if (mode === 'cloud' || mode === 'local') {
-        const baseUrl = document.getElementById('setupBaseUrl').value.trim();
-        const model = document.getElementById('setupModel').value.trim();
-
-        if (!baseUrl) {
-          errorEl.textContent = 'Vui lòng nhập Base URL.';
-          errorEl.style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = '✅ Hoàn tất cài đặt';
-          return;
-        }
-        if (!model) {
-          errorEl.textContent = 'Vui lòng nhập tên model.';
-          errorEl.style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = '✅ Hoàn tất cài đặt';
-          return;
-        }
-
-        const configResp = await api.saveSetupConfig({
-          provider_type: 'openai_compatible',
-          base_url: baseUrl,
-          api_key: document.getElementById('setupApiKey').value.trim(),
-          model: model,
-          timeout_seconds: parseInt(document.getElementById('setupTimeout').value) || 60,
-          max_tokens: parseInt(document.getElementById('setupMaxTokens').value) || 4096,
-          reasoning_effort: document.getElementById('setupReasoningEffort').value,
-        });
-        if (!configResp.success) {
-          errorEl.textContent = configResp.error?.message || 'Lỗi lưu cấu hình.';
-          errorEl.style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = '✅ Hoàn tất cài đặt';
-          return;
-        }
-      }
-
-      // Mark setup complete
-      const completeResp = await api.completeSetup();
-      if (completeResp.success) {
-        app.showToast('Cài đặt hoàn tất! Vui lòng đăng nhập để bắt đầu.', 'success');
-        document.getElementById('loginModal').style.display = 'flex';
-      } else {
-        errorEl.textContent = completeResp.error?.message || 'Lỗi hoàn tất cài đặt.';
-        errorEl.style.display = 'block';
-      }
-    } catch (err) {
-      errorEl.textContent = `Lỗi: ${err.message}`;
-      errorEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '✅ Hoàn tất cài đặt';
-    }
-  },
-
-  // ------------------------------------------------------------------
-  // Page rendering
-  // ------------------------------------------------------------------
-
-  showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-    const page = document.getElementById(`page-${pageId}`);
-    if (page) page.style.display = 'block';
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
-    if (navItem) navItem.classList.add('active');
-    this.state.currentPage = pageId;
-  },
-
-  async renderHome() {
-    const el = document.getElementById('page-home');
-    el.innerHTML = '<div class="loading">Đang tải...</div>';
-    const resp = await api.health();
-    const health = resp.success ? resp.data : { status: 'unknown' };
-
-    let vaultHtml = '<div class="empty-state"><h3>Chưa có kho tài liệu</h3><p class="text-sm">Tạo kho tài liệu đầu tiên để bắt đầu.</p></div>';
-    try {
-      const vResp = await api.listVaults({ limit: 5 });
-      if (vResp.success) {
-        const vaults = vResp.data.items || [];
-        if (vaults.length > 0) {
-          vaultHtml = vaults.map(v => `
-            <div class="card" style="cursor:pointer" onclick="app.router.navigate('vaults')" role="button" tabindex="0" aria-label="Xem kho ${this.esc(v.name)}">
-              <div class="flex-between">
-                <strong>${this.esc(v.name)}</strong>
-                <span class="badge badge-info">${v.vault_type}</span>
-              </div>
-              <div class="muted text-sm mt-8">${v.document_count || 0} tài liệu · ${v.member_count || 0} thành viên</div>
-            </div>
-          `).join('');
-        }
-      }
-    } catch(e) { /* ignore */ }
-
-    el.innerHTML = `
-      <h1>Trang chủ</h1>
-      <div class="card-grid">
-        <div class="card">
-          <h3>📤 Tải lên nhanh</h3>
-          <p class="muted text-sm">Tải lên tài liệu pháp lý mới</p>
-          <button class="btn btn-primary mt-8" onclick="app.router.navigate('upload')">Tải lên</button>
-        </div>
-        <div class="card">
-          <h3>🔍 Tra cứu</h3>
-          <p class="muted text-sm">Tìm kiếm trong kho tài liệu</p>
-          <button class="btn btn-outline mt-8" onclick="app.router.navigate('search')">Tra cứu</button>
-        </div>
-        <div class="card">
-          <h3>❓ Hỏi đáp</h3>
-          <p class="muted text-sm">Đặt câu hỏi về tài liệu pháp lý</p>
-          <button class="btn btn-outline mt-8" onclick="app.router.navigate('ask')">Hỏi</button>
-        </div>
-        <div class="card">
-          <h3>⚙️ Hệ thống</h3>
-          <p class="muted text-sm">Trạng thái: <strong>${health.status}</strong></p>
-          <p class="text-sm muted">Phiên bản: ${health.version || '0.1.0'}</p>
-        </div>
-      </div>
-      <h2 class="mt-16">Kho tài liệu</h2>
-      <div class="card-grid">${vaultHtml}</div>
-    `;
-  },
-
-  async renderSearch() {
-    const el = document.getElementById('page-search');
-    el.innerHTML = `
-      <h1>Tra cứu</h1>
-      <div class="card">
-        <form id="searchForm" onsubmit="return app.runSearch(event)">
-          <div class="flex gap-8 flex-wrap">
-            <select id="searchMode" class="form-select" style="width:auto;min-width:120px" aria-label="Chế độ tìm kiếm">
-              <option value="hybrid">Hybrid</option>
-              <option value="semantic">Semantic</option>
-              <option value="keyword">Keyword</option>
-            </select>
-            <input type="text" id="searchQuery" class="form-input" style="flex:1;min-width:200px"
-                   placeholder="Nhập từ khóa tra cứu..." required aria-label="Từ khóa tìm kiếm">
-            <button type="submit" class="btn btn-primary" id="searchBtn">Tìm kiếm</button>
-          </div>
-        </form>
-      </div>
-      <div id="searchResults"></div>
-    `;
-    document.getElementById('searchQuery').focus();
-  },
-
-  async runSearch(event) {
-    if (event) event.preventDefault();
-    const query = document.getElementById('searchQuery').value.trim();
-    if (!query) return;
-    const mode = document.getElementById('searchMode').value;
-    const btn = document.getElementById('searchBtn');
-    const resultsEl = document.getElementById('searchResults');
-    btn.disabled = true;
-    btn.textContent = 'Đang tìm...';
-    resultsEl.innerHTML = '<div class="loading">Đang tìm kiếm...</div>';
-
-    const body = { query, top_k: 20 };
-    let resp;
-    try {
-      if (mode === 'semantic') resp = await api.searchSemantic(body);
-      else if (mode === 'keyword') resp = await api.searchKeyword(body);
-      else resp = await api.searchHybrid(body);
-    } catch (err) {
-      resultsEl.innerHTML = `<div class="card"><div class="form-error">Lỗi kết nối: ${this.esc(err.message)}</div></div>`;
-      btn.disabled = false;
-      btn.textContent = 'Tìm kiếm';
-      return;
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Tìm kiếm';
-
-    if (!resp.success) {
-      resultsEl.innerHTML = `<div class="card"><div class="form-error">${this.esc(resp.error?.message || 'Lỗi tìm kiếm')}</div></div>`;
-      return;
-    }
-
-    const evidence = resp.data.evidence || [];
-    if (evidence.length === 0) {
-      resultsEl.innerHTML = '<div class="empty-state"><h3>Không tìm thấy kết quả</h3><p class="text-sm">Thử thay đổi từ khóa hoặc chế độ tìm kiếm.</p></div>';
-      return;
-    }
-
-    resultsEl.innerHTML = `
-      <div class="flex-between mb-16 flex-wrap">
-        <span class="muted">${evidence.length} kết quả</span>
-        <span class="badge badge-info">${resp.data.strategy || mode}</span>
-      </div>
-      ${evidence.map((e, i) => {
-        const ref = e.source_anchor
-          ? (typeof e.source_anchor === 'string' ? e.source_anchor : e.source_anchor.canonical_reference || '')
-          : '';
-        const refDisplay = ref || `Kết quả #${i + 1}`;
-        const sourceTargetId = `citation-source-search-${e.id}`;
-        return `
-        <div class="card result-card">
-          <div class="result-title">${this.esc(e.document_title || refDisplay)}</div>
-          ${(e.document_tags || []).length ? `<div class="mt-8">${e.document_tags.map(tag => `<span class="badge badge-neutral mr-4">${this.esc(tag)}</span>`).join('')}</div>` : ''}
-          ${ref ? `<div class="result-ref">${this.esc(ref)}</div>` : ''}
-          <div class="result-preview">${this.highlight(this.esc(e.text || ''), query)}</div>
-          <div class="result-actions">
-            <span class="badge ${e.score >= 0.8 ? 'badge-success' : e.score >= 0.5 ? 'badge-warning' : 'badge-neutral'}">
-              ${(e.score * 100).toFixed(0)}%
-            </span>
-            <button class="btn btn-sm btn-outline" onclick="app.copyCitation('${this.esc(ref)}')" ${ref ? '' : 'disabled'}>
-              📋 Sao chép
-            </button>
-            ${e.document_id && e.knowledge_node_id ? `
-            <button class="btn btn-sm btn-outline"
-              onclick="app.showCitationSource('${e.document_id}', '${e.knowledge_node_id}', '${e.source_anchor?.page || ''}', 'search-${e.id}')">
-              Xem nguồn
-            </button>` : ''}
-          </div>
-          <div id="${sourceTargetId}" class="mt-8"></div>
-        </div>`;
-      }).join('')}
-    `;
-  },
-
-  async renderAsk() {
-    const el = document.getElementById('page-ask');
-    el.innerHTML = `
-      <h1>Hỏi đáp</h1>
-      <div class="card">
-        <form id="askForm" onsubmit="return app.runAsk(event)">
-          <div class="form-group">
-            <label for="askQuery">Câu hỏi của bạn</label>
-            <textarea id="askQuery" class="form-textarea" placeholder="Nhập câu hỏi về tài liệu pháp lý..."
-                      style="min-height:80px" required aria-label="Câu hỏi"></textarea>
-            <div class="form-hint">Nhấn Ctrl+Enter để gửi nhanh</div>
-          </div>
-          <button type="submit" class="btn btn-primary" id="askBtn">Gửi câu hỏi</button>
-        </form>
-      </div>
-      <div id="askResults"></div>
-    `;
-    const ta = document.getElementById('askQuery');
-    ta.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && e.ctrlKey) app.runAsk(e);
-    });
-    ta.focus();
-  },
-
-  async runAsk(event) {
-    if (event) event.preventDefault();
-    const query = document.getElementById('askQuery').value.trim();
-    if (!query) return;
-    const btn = document.getElementById('askBtn');
-    const resultsEl = document.getElementById('askResults');
-    btn.disabled = true;
-    btn.textContent = 'Đang xử lý...';
-    resultsEl.innerHTML = '<div class="loading">Đang xử lý câu hỏi...</div>';
-
-    let resp;
-    try {
-      resp = await api.ask({ query });
-    } catch (err) {
-      resultsEl.innerHTML = `<div class="card"><div class="form-error">Lỗi kết nối: ${this.esc(err.message)}</div></div>`;
-      btn.disabled = false;
-      btn.textContent = 'Gửi câu hỏi';
-      return;
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Gửi câu hỏi';
-
-    if (!resp.success) {
-      resultsEl.innerHTML = `<div class="card"><div class="form-error">${this.esc(resp.error?.message || 'Lỗi xử lý')}</div></div>`;
-      return;
-    }
-
-    const a = resp.data;
-    const confLevel = a.confidence?.level || 'MEDIUM';
-    const confScore = a.confidence?.score || 0;
-    const confColor = confLevel === 'HIGH' ? 'badge-success' : confLevel === 'MEDIUM' ? 'badge-warning' : 'badge-danger';
-
-    resultsEl.innerHTML = `
-      <div class="card">
-        <div class="flex-between mb-16 flex-wrap">
-          <div class="flex gap-8 flex-wrap">
-            <span class="badge ${a.status === 'SUCCESS' ? 'badge-success' : a.status === 'PARTIAL' ? 'badge-warning' : 'badge-danger'}">
-              ${a.status}
-            </span>
-            <span class="badge ${confColor}">${confLevel} (${(confScore * 100).toFixed(0)}%)</span>
-          </div>
-        </div>
-
-        <div class="answer-content">${this.renderMarkdown(a.response?.content || '')}</div>
-
-        ${a.citations?.length > 0 ? `
-          <h3>Trích dẫn (${a.citations.length})</h3>
-          <div class="confidence-bar mt-8" role="progressbar" aria-valuenow="${Math.round(confScore * 100)}" aria-valuemin="0" aria-valuemax="100">
-            <div class="confidence-fill" style="width:${confScore * 100}%"></div>
-          </div>
-          <ul class="citation-list mt-8">
-            ${a.citations.map(c => {
-              const anchor = c.source_anchor || {};
-              const pageLabel = anchor.page ? ` · Trang ${anchor.page}` : '';
-              return `
-              <li class="citation-item">
-                <details>
-                  <summary>${this.esc(c.document_title || 'Tài liệu')} — ${this.esc(c.label || `Trích dẫn #${(c.id || '').slice(0, 8)}`)}${this.esc(pageLabel)}</summary>
-                  <div class="citation-detail">
-                    <div><strong>Vị trí:</strong> ${this.esc(anchor.canonical_reference || c.label || '')}${anchor.page ? `, trang ${anchor.page}` : ''}</div>
-                    ${(c.document_tags || []).length ? `<div class="mt-8">${c.document_tags.map(tag => `<span class="badge badge-neutral mr-4">${this.esc(tag)}</span>`).join('')}</div>` : ''}
-                    <button type="button" class="btn btn-outline mt-8"
-                      onclick="app.showCitationSource('${c.document_id}', '${c.knowledge_node_id}', '${anchor.page || ''}', '${c.id}')">
-                      Xem nguồn
-                    </button>
-                    <div id="citation-source-${c.id}" class="mt-8"></div>
-                  </div>
-                </details>
-              </li>
-            `}).join('')}
-          </ul>
-        ` : ''}
-
-        ${a.limitations?.length > 0 ? `
-          <div class="mt-16">
-            <h3>Lưu ý</h3>
-            <ul>
-              ${a.limitations.map(l => `<li class="text-sm muted">${this.esc(typeof l === 'string' ? l : l.description || '')}</li>`).join('')}
-            </ul>
-          </div>
-        ` : ''}
-      </div>
-    `;
-  },
-
-  async showCitationSource(documentId, nodeId, page, citationId) {
-    const target = document.getElementById(`citation-source-${citationId}`);
-    if (!target) return;
-    target.innerHTML = '<div class="loading">Đang kiểm tra nguồn...</div>';
-    const response = await api.getDocumentSource(documentId, {
-      node_id: nodeId,
-      page: page || undefined,
-    });
-    if (!response.success) {
-      target.innerHTML = `<div class="form-error">${this.esc(response.error?.message || 'Không thể mở nguồn.')}</div>`;
-      return;
-    }
-    const source = response.data;
-    const visibleText = source.node?.text || source.page?.text || '';
-    target.innerHTML = `
-      <div class="card" style="background:var(--surface-muted, #f7f7f8)">
-        <div><strong>${this.esc(source.title)}</strong></div>
-        <div class="text-sm muted">${this.esc(source.filename)}${source.page?.number ? ` · Trang ${source.page.number}` : ''}</div>
-        <blockquote class="mt-8" style="white-space:pre-wrap">${this.esc(visibleText || 'Không có văn bản trích xuất cho vị trí này.')}</blockquote>
-        <button type="button" class="btn btn-outline mt-8"
-          onclick="app.downloadCitationSource('${documentId}', '${citationId}')">
-          Tải bản gốc
-        </button>
-        <span id="citation-download-${citationId}" class="text-sm muted"></span>
-      </div>
-    `;
-  },
-
-  async downloadCitationSource(documentId, citationId) {
-    const status = document.getElementById(`citation-download-${citationId}`);
-    if (status) status.textContent = ' Đang chuẩn bị...';
-    const response = await api.getDocumentSource(documentId, { include_original: '1' });
-    if (!response.success || !response.data?.content_base64) {
-      if (status) status.textContent = ` ${response.error?.message || 'Không thể tải bản gốc.'}`;
-      return;
-    }
-    const binary = atob(response.data.content_base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
-    const blob = new Blob([bytes], { type: response.data.mime_type || 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = response.data.filename || 'source';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    if (status) status.textContent = ' Đã tải.';
-  },
-
-  async renderVaults() {
-    const el = document.getElementById('page-vaults');
-    el.innerHTML = '<div class="loading">Đang tải...</div>';
-
-    const resp = await api.listVaults();
-    if (!resp.success) {
-      el.innerHTML = `<div class="empty-state"><h3>Không thể tải danh sách</h3><p class="text-sm">${this.esc(resp.error?.message || 'Vui lòng thử lại sau.')}</p></div>`;
-      return;
-    }
-
-    const vaults = resp.data.items || [];
-    el.innerHTML = `
-      <div class="flex-between mb-16 flex-wrap">
-        <h1>Kho tài liệu</h1>
-        <button class="btn btn-primary" onclick="app.showCreateVaultModal()" aria-label="Tạo kho tài liệu mới">+ Tạo mới</button>
-      </div>
-      ${vaults.length === 0 ? '<div class="empty-state"><h3>Chưa có kho tài liệu</h3><p class="text-sm">Tạo kho tài liệu đầu tiên để bắt đầu.</p></div>' : `
-      <div class="card-grid">
-        ${vaults.map(v => `
-          <div class="card" onclick="app.router.navigate('documents', 'vault_id=${v.id}')" style="cursor:pointer" role="button" tabindex="0" aria-label="Xem tài liệu trong kho ${this.esc(v.name)}">
-            <div class="flex-between">
-              <strong>${this.esc(v.name)}</strong>
-              <span class="badge badge-info">${v.vault_type}</span>
-            </div>
-            <p class="text-sm muted mt-8">${this.esc(v.description || '')}</p>
-            <div class="flex gap-8 mt-8 text-sm">
-              <span>📄 ${v.document_count || 0} tài liệu</span>
-              <span>👥 ${v.member_count || 0} thành viên</span>
-            </div>
-            <div class="flex gap-8 mt-8">
-              <span class="badge ${v.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}">${v.status}</span>
-            </div>
-          </div>
-        `).join('')}
-      </div>`}
-    `;
-  },
-
-  async renderDocuments(params = {}) {
-    const el = document.getElementById('page-documents');
-    el.innerHTML = '<div class="loading">Đang tải...</div>';
-
-    const resp = await api.listDocuments({ ...params, status: params.status || 'ACTIVE' });
-    if (!resp.success) {
-      el.innerHTML = `<div class="empty-state"><h3>Không thể tải danh sách</h3><p class="text-sm">${this.esc(resp.error?.message || 'Vui lòng thử lại sau.')}</p></div>`;
-      return;
-    }
-
-    const docs = resp.data.items || [];
-    this.state.documents = docs;
-    const allTags = [...new Set(docs.flatMap(d => d.tags || []))].sort((a, b) => a.localeCompare(b, 'vi'));
-    el.innerHTML = `
-      <div class="flex-between mb-16 flex-wrap">
-        <h1>Tài liệu</h1>
-        <label class="text-sm" for="documentTagFilter">Lọc theo nhãn
-          <select id="documentTagFilter" class="form-select" onchange="app.filterDocumentsByTag(this.value)">
-            <option value="">Tất cả nhãn</option>
-            ${allTags.map(tag => `<option value="${this.esc(tag)}">${this.esc(tag)}</option>`).join('')}
-          </select>
-        </label>
-      </div>
-      ${docs.length === 0 ? '<div class="empty-state"><h3>Chưa có tài liệu nào</h3><p class="text-sm">Tải lên tài liệu để bắt đầu tra cứu.</p></div>' : `
-      <div class="table-responsive" role="region" tabindex="0" aria-label="Danh sách tài liệu, có thể cuộn ngang">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Tiêu đề</th>
-              <th>Loại</th>
-              <th>Nhãn</th>
-              <th>Cơ quan ban hành</th>
-              <th>Xử lý</th>
-              <th>Ngày tạo</th>
-              <th>Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${docs.map(d => `
-              <tr data-document-tags="${this.esc((d.tags || []).join('|'))}">
-                <td><strong>${this.esc(d.title)}</strong>${d.description ? `<div class="text-sm muted">${this.esc(d.description)}</div>` : ''}</td>
-                <td><span class="badge badge-info">${d.type}</span></td>
-                <td>${(d.tags || []).map(tag => `<span class="badge badge-neutral mr-4">${this.esc(tag)}</span>`).join('') || '—'}</td>
-                <td class="muted">${this.esc(d.issuing_authority || '—')}</td>
-                <td><span class="badge ${d.processing_state === 'READY' ? 'badge-success' : d.processing_state === 'FAILED' ? 'badge-danger' : 'badge-info'}">${this.esc(d.processing_state || d.status)}</span></td>
-                <td class="text-sm muted">${d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : '—'}</td>
-                <td>
-                  <button class="btn btn-sm btn-outline" onclick="app.showDocumentDetail('${d.id}')" aria-label="Xem chi tiết tài liệu">Xem</button>
-                  ${d.status === 'ACTIVE' ? `<button class="btn btn-sm btn-danger" onclick="app.confirmDelete('${d.id}')" aria-label="Lưu trữ tài liệu">Lưu trữ</button>` : ''}
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>`}
-    `;
-  },
-
-  filterDocumentsByTag(tag) {
-    document.querySelectorAll('tr[data-document-tags]').forEach(row => {
-      const tags = (row.dataset.documentTags || '').split('|');
-      row.style.display = !tag || tags.includes(tag) ? '' : 'none';
-    });
-  },
-
-  async renderUpload() {
-    const el = document.getElementById('page-upload');
-    el.innerHTML = `
-      <div class="flex justify-between items-center gap-8 mb-16">
-        <h1>Tải lên tài liệu</h1>
-        <button type="button" class="btn btn-outline" onclick="app.showFolderUpload()">Tải lên thư mục</button>
-      </div>
-      <div class="card">
-        <form id="uploadForm" onsubmit="return app.handleUpload(event)">
-          <div class="form-group">
-            <label for="uploadFile">Tệp tin (PDF, DOCX) <span aria-label="Bắt buộc">*</span></label>
-            <input type="file" id="uploadFile" class="form-input" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required aria-required="true">
-          </div>
-          <div class="form-group">
-            <label for="uploadTitle">Tiêu đề <span aria-label="Bắt buộc">*</span></label>
-            <input type="text" id="uploadTitle" class="form-input" placeholder="Nhập tiêu đề tài liệu" required aria-required="true">
-          </div>
-          <div class="form-group">
-            <label for="uploadAuthority">Cơ quan ban hành <span aria-label="Bắt buộc">*</span></label>
-            <input type="text" id="uploadAuthority" class="form-input" placeholder="Ví dụ: Ngân hàng Nhà nước" required aria-required="true">
-          </div>
-          <div class="form-group">
-            <label for="uploadNumber">Số hiệu văn bản</label>
-            <input type="text" id="uploadNumber" class="form-input" placeholder="Ví dụ: 90/2025/QH15">
-          </div>
-          <div class="form-group">
-            <label for="uploadDescription">Mô tả ngắn</label>
-            <textarea id="uploadDescription" class="form-textarea"
-                      placeholder="Nội dung hoặc mục đích chính của tài liệu"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="uploadTags">Nhãn / thẻ <span aria-label="Bắt buộc">*</span></label>
-            <input type="text" id="uploadTags" class="form-input"
-                   placeholder="Ví dụ: Luật, Đấu thầu, Quốc hội" required aria-required="true">
-            <div class="form-hint">Phân tách các nhãn bằng dấu phẩy.</div>
-          </div>
-          <div class="form-group">
-            <label for="uploadIssueDate">Ngày ban hành</label>
-            <input type="date" id="uploadIssueDate" class="form-input">
-          </div>
-          <div class="form-group">
-            <label for="uploadType">Loại tài liệu</label>
-            <select id="uploadType" class="form-select">
-              <option value="INTERNAL_REGULATION">Nội quy</option>
-              <option value="DECISION">Quyết định</option>
-              <option value="CIRCULAR">Thông tư</option>
-              <option value="DECREE">Nghị định</option>
-              <option value="LAW">Luật</option>
-              <option value="INTERNAL_POLICY">Chính sách nội bộ</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="uploadVault">Kho tài liệu <span aria-label="Bắt buộc">*</span></label>
-            <select id="uploadVault" class="form-select" required aria-required="true">
-              <option value="">Chọn kho tài liệu...</option>
-            </select>
-          </div>
-          <div class="form-error" id="uploadError" style="display:none" role="alert"></div>
-          <button type="submit" class="btn btn-primary btn-block" id="uploadBtn">Tải lên</button>
-        </form>
-      </div>
-      <div id="uploadStatus"></div>
-    `;
-
-    // Load vaults for the dropdown
-    try {
-      const vResp = await api.listVaults();
-      if (vResp.success) {
-        const selects = [
-          document.getElementById('uploadVault'),
-          document.getElementById('folderVault'),
-        ].filter(Boolean);
-        (vResp.data.items || []).forEach(v => {
-          selects.forEach(select => {
-            const opt = document.createElement('option');
-            opt.value = v.id;
-            opt.textContent = `${v.name} (${v.vault_type})`;
-            select.appendChild(opt);
-          });
-        });
-      }
-    } catch(e) { /* ignore */ }
-  },
-
-  async handleUpload(event) {
-    event.preventDefault();
-    const fileInput = document.getElementById('uploadFile');
-    const title = document.getElementById('uploadTitle').value.trim();
-    const authority = document.getElementById('uploadAuthority').value.trim();
-    const documentNumber = document.getElementById('uploadNumber').value.trim();
-    const description = document.getElementById('uploadDescription').value.trim();
-    const tags = this.parseTags(document.getElementById('uploadTags').value);
-    const issueDate = document.getElementById('uploadIssueDate').value;
-    const type = document.getElementById('uploadType').value;
-    const vaultId = document.getElementById('uploadVault').value;
-    const errorEl = document.getElementById('uploadError');
-    const btn = document.getElementById('uploadBtn');
-
-    // Client-side validation
-    if (!fileInput.files || !fileInput.files[0]) {
-      errorEl.textContent = 'Vui lòng chọn tệp tin.';
-      errorEl.style.display = 'block';
-      return;
-    }
-    if (!title) {
-      errorEl.textContent = 'Vui lòng nhập tiêu đề.';
-      errorEl.style.display = 'block';
-      return;
-    }
-    if (!authority) {
-      errorEl.textContent = 'Vui lòng nhập cơ quan ban hành.';
-      errorEl.style.display = 'block';
-      return;
-    }
-    if (!vaultId) {
-      errorEl.textContent = 'Vui lòng chọn kho tài liệu.';
-      errorEl.style.display = 'block';
-      return;
-    }
-    if (tags.length === 0) {
-      errorEl.textContent = 'Vui lòng nhập ít nhất một nhãn cho tài liệu.';
-      errorEl.style.display = 'block';
-      return;
-    }
-
-    errorEl.style.display = 'none';
-    btn.disabled = true;
-    btn.textContent = 'Đang tải lên...';
-
-    try {
-      const file = fileInput.files[0];
-
-      // Validate file size (100 MB max)
-      if (file.size > 100 * 1024 * 1024) {
-        errorEl.textContent = 'Tệp tin quá lớn. Kích thước tối đa là 100 MB.';
-        errorEl.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = 'Tải lên';
-        return;
-      }
-
-      // Use FormData-based upload for reliable binary transfer
-      const resp = await api.uploadFile({
-        file: file,
-        filename: file.name,
-        title: title,
-        issuing_authority: authority,
-        document_type: type,
-        vault_id: vaultId,
-        document_number: documentNumber || undefined,
-        description: description || undefined,
-        tags,
-        issue_date: issueDate || undefined,
-      });
-
-      if (resp.success) {
-        document.getElementById('uploadStatus').innerHTML = `
-          <div class="card">
-            <h3>✅ Tải lên thành công</h3>
-            <p class="text-sm muted">Mã tài liệu: ${resp.data.document_id}</p>
-            <p class="text-sm muted">Kích thước: ${(resp.data.size_bytes / 1024).toFixed(1)} KB</p>
-            ${resp.data.duplicate_candidates?.length > 0 ? `
-              <div class="badge badge-warning mt-8">⚠️ Phát hiện tài liệu trùng lặp</div>
-            ` : ''}
-            <div class="flex gap-8 mt-8">
-              <button class="btn btn-outline" onclick="app.router.navigate('documents')">Xem danh sách</button>
-              <button class="btn btn-outline" onclick="app.router.navigate('upload')">Tải lên tiếp</button>
-            </div>
-          </div>
-        `;
-        // Reset form
-        document.getElementById('uploadForm').reset();
-        app.showToast('Tải lên thành công!', 'success');
-      } else {
-        errorEl.textContent = resp.error?.message || 'Lỗi tải lên.';
-        errorEl.style.display = 'block';
-      }
-    } catch (err) {
-      errorEl.textContent = `Lỗi: ${err.message}`;
-      errorEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Tải lên';
-    }
-  },
-
-  async renderAdmin() {
-    const el = document.getElementById('page-admin');
-    el.innerHTML = '<div class="loading">Đang tải...</div>';
-
-    const [jobsResp, sysResp, docsResp] = await Promise.all([
-      api.listJobs({ limit: 20 }),
-      api.getSystemInfo(),
-      api.listDocuments({ limit: 100 }),
-    ]);
-
-    const jobs = jobsResp.success ? (jobsResp.data.jobs || []) : [];
-    const sys = sysResp.success ? sysResp.data : {};
-    const docs = docsResp.success ? (docsResp.data.items || []) : [];
-
-    el.innerHTML = `
-      <h1>Quản trị hệ thống</h1>
-
-      <div class="card-grid mb-16">
-        <div class="card">
-          <h3>📊 Hệ thống</h3>
-          <p class="text-sm">Phiên bản: <strong>${sys.version || '0.1.0'}</strong></p>
-          <p class="text-sm">Tổng số tài liệu: <strong>${sys.document_count || 0}</strong></p>
-          <p class="text-sm">Mục lục: <strong>${sys.index?.total_entries || 0}</strong> bản ghi</p>
-        </div>
-        <div class="card">
-          <h3>🔄 Tác vụ</h3>
-          <label for="adminDocument" class="text-sm">Tài liệu cần xử lý</label>
-          <select id="adminDocument" class="form-select mt-8">
-            <option value="">Chọn một tài liệu...</option>
-            ${docs.map(d => `<option value="${d.id}">${this.esc(d.title)} (${this.esc(d.processing_state || d.status)})</option>`).join('')}
-          </select>
-          <div class="flex gap-8 flex-wrap mt-8">
-            <button class="btn btn-sm btn-outline" onclick="app.runAdminReindex()" id="reindexBtn">Re-index</button>
-            <button class="btn btn-sm btn-outline" onclick="app.runAdminReembed()" id="reembedBtn">Re-embed</button>
-            <button class="btn btn-sm btn-outline" onclick="app.runAdminReparse()" id="reparseBtn">Re-parse</button>
-            <button class="btn btn-sm btn-outline" onclick="app.runAdminReocr()" id="reocrBtn">Re-OCR</button>
-          </div>
-          <div id="adminActionResult" class="mt-8 text-sm"></div>
-        </div>
-      </div>
-
-      <h2>Công việc gần đây</h2>
-      ${jobs.length === 0 ? '<div class="empty-state"><h3>Chưa có công việc nào</h3></div>' : `
-      <div class="table-responsive" role="region" tabindex="0" aria-label="Danh sách công việc, có thể cuộn ngang">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Tài liệu</th>
-              <th>Trạng thái</th>
-              <th>Xử lý</th>
-              <th>Kết quả</th>
-              <th>Ngày tạo</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${jobs.map(j => `
-              <tr>
-                <td>${this.esc(j.title)}</td>
-                <td><span class="badge ${j.status === 'COMPLETED' ? 'badge-success' : j.status === 'FAILED' ? 'badge-danger' : 'badge-info'}">${j.status}</span></td>
-                <td><span class="badge badge-info">${j.processing_state || '—'}</span></td>
-                <td class="text-sm ${j.error ? 'text-danger' : 'muted'}">${this.esc(j.error || '—')}</td>
-                <td class="text-sm muted">${j.created_at ? new Date(j.created_at).toLocaleDateString('vi-VN') : '—'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>`}
-    `;
-  },
-
-  async runAdminReindex() {
-    const el = document.getElementById('adminActionResult');
-    const btn = document.getElementById('reindexBtn');
-    const body = this.adminReprocessBody();
-    if (!body) return;
-    btn.disabled = true;
-    el.textContent = 'Đang thực hiện...';
-    const resp = await api.reindex(body);
-    btn.disabled = false;
-    el.innerHTML = resp.success
-      ? `<span class="badge badge-success">✅ Re-index hoàn tất cho ${resp.data.completed_count} tài liệu (${resp.data.completed.reduce((sum, item) => sum + item.indexed_entries, 0)} mục).</span>`
-      : `<span class="badge badge-danger">❌ ${this.esc(resp.error?.message || 'Re-index thất bại')}</span>`;
-  },
-
-  async runAdminReembed() {
-    const el = document.getElementById('adminActionResult');
-    const btn = document.getElementById('reembedBtn');
-    const body = this.adminReprocessBody();
-    if (!body) return;
-    btn.disabled = true;
-    el.textContent = 'Đang thực hiện...';
-    const resp = await api.reembed(body);
-    btn.disabled = false;
-    el.innerHTML = resp.success
-      ? `<span class="badge badge-success">✅ Re-embed hoàn tất cho ${resp.data.completed_count} tài liệu.</span>`
-      : `<span class="badge badge-danger">❌ ${this.esc(resp.error?.message || 'Re-embed thất bại')}</span>`;
-  },
-
-  async runAdminReparse() {
-    const el = document.getElementById('adminActionResult');
-    const btn = document.getElementById('reparseBtn');
-    const body = this.adminReprocessBody();
-    if (!body) return;
-    btn.disabled = true;
-    el.textContent = 'Đang thực hiện...';
-    const resp = await api.reparse(body);
-    btn.disabled = false;
-    el.innerHTML = resp.success
-      ? `<span class="badge badge-success">✅ Re-parse hoàn tất cho ${resp.data.completed_count} tài liệu.</span>`
-      : `<span class="badge badge-danger">❌ ${this.esc(resp.error?.message || 'Re-parse thất bại')}</span>`;
-  },
-
-  async runAdminReocr() {
-    const el = document.getElementById('adminActionResult');
-    const btn = document.getElementById('reocrBtn');
-    const body = this.adminReprocessBody();
-    if (!body) return;
-    btn.disabled = true;
-    el.textContent = 'Đang thực hiện...';
-    const resp = await api.reocr(body);
-    btn.disabled = false;
-    el.innerHTML = resp.success
-      ? `<span class="badge badge-success">✅ Re-OCR hoàn tất cho ${resp.data.completed_count} tài liệu.</span>`
-      : `<span class="badge badge-danger">❌ ${this.esc(resp.error?.message || 'Re-OCR thất bại')}</span>`;
-  },
-
-  adminReprocessBody() {
-    const selected = document.getElementById('adminDocument')?.value;
-    if (!selected) {
-      const el = document.getElementById('adminActionResult');
-      if (el) el.innerHTML = '<span class="text-danger">Vui lòng chọn một tài liệu để tránh chạy tác vụ ngoài ý muốn.</span>';
-      return null;
-    }
-    return { document_id: selected };
-  },
-
-  // ------------------------------------------------------------------
-  // Document detail panel
-  // ------------------------------------------------------------------
-
-  async showDocumentDetail(docId) {
-    const resp = await api.getDocument(docId);
-    if (!resp.success) {
-      app.showToast('Không thể tải thông tin tài liệu.', 'error');
-      return;
-    }
-    const d = resp.data;
-
-    // Remove existing detail panel
-    const existing = document.querySelector('.doc-detail-overlay');
-    if (existing) existing.remove();
-
-    const overlay = document.createElement('div');
-    overlay.className = 'doc-detail-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', 'Chi tiết tài liệu');
-    overlay.innerHTML = `
-      <div class="doc-detail-panel">
-        <div class="flex-between">
-          <h2>${this.esc(d.title)}</h2>
-          <button class="btn btn-sm btn-outline" onclick="this.closest('.doc-detail-overlay').remove()" aria-label="Đóng">✕</button>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Mã tài liệu</span>
-          <span class="doc-detail-value">${d.id}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Loại</span>
-          <span class="doc-detail-value">${d.type}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Cơ quan ban hành</span>
-          <span class="doc-detail-value">${this.esc(d.issuing_authority || '—')}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Số hiệu</span>
-          <span class="doc-detail-value">${this.esc(d.document_number || '—')}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Ngôn ngữ</span>
-          <span class="doc-detail-value">${d.language || 'vi'}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Vòng đời</span>
-          <span class="doc-detail-value"><span class="badge ${d.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}">${d.status}</span></span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Xử lý</span>
-          <span class="doc-detail-value"><span class="badge ${d.processing_state === 'READY' ? 'badge-success' : d.processing_state === 'FAILED' ? 'badge-danger' : 'badge-info'}">${this.esc(d.processing_state || 'Chưa bắt đầu')}</span></span>
-        </div>
-        ${d.processing_error ? `
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Lỗi xử lý</span>
-          <span class="doc-detail-value text-danger">${this.esc(d.processing_error)}</span>
-        </div>` : ''}
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Kho tài liệu</span>
-          <span class="doc-detail-value">${d.vault_id}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Ngày tạo</span>
-          <span class="doc-detail-value">${d.created_at ? new Date(d.created_at).toLocaleString('vi-VN') : '—'}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Phiên bản</span>
-          <span class="doc-detail-value">${d.version_count || 0}</span>
-        </div>
-        ${d.description ? `
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Mô tả</span>
-          <span class="doc-detail-value">${this.esc(d.description)}</span>
-        </div>` : ''}
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Tệp gốc</span>
-          <span class="doc-detail-value">${this.esc(d.original_filename || '—')}</span>
-        </div>
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Nhãn</span>
-          <span class="doc-detail-value">${(d.tags || []).map(tag => `<span class="badge badge-neutral mr-4">${this.esc(tag)}</span>`).join('') || '—'}</span>
-        </div>
-        ${d.issue_date ? `
-        <div class="doc-detail-row">
-          <span class="doc-detail-label">Ngày ban hành</span>
-          <span class="doc-detail-value">${new Date(d.issue_date).toLocaleDateString('vi-VN')}</span>
-        </div>` : ''}
-        <details class="mt-16">
-          <summary>Chỉnh sửa tiêu đề, mô tả và nhãn</summary>
-          <div class="form-group mt-8">
-            <label for="editTitle">Tiêu đề</label>
-            <input id="editTitle" class="form-input" value="${this.esc(d.title)}">
-          </div>
-          <div class="form-group">
-            <label for="editDescription">Mô tả ngắn</label>
-            <textarea id="editDescription" class="form-textarea">${this.esc(d.description || '')}</textarea>
-          </div>
-          <div class="form-group">
-            <label for="editTags">Nhãn / thẻ</label>
-            <input id="editTags" class="form-input" value="${this.esc((d.tags || []).join(', '))}">
-          </div>
-          <button type="button" class="btn btn-primary" onclick="app.saveDocumentMetadata('${d.id}')">Lưu thông tin</button>
-          <span id="editDocumentResult" class="text-sm muted"></span>
-        </details>
-        <div id="citation-source-detail-${d.id}" class="mt-8"></div>
-        <div class="modal-actions">
-          <button class="btn btn-outline" onclick="app.showCitationSource('${d.id}', '', '', 'detail-${d.id}')">Mở nguồn</button>
-          <button class="btn btn-outline" onclick="this.closest('.doc-detail-overlay').remove()">Đóng</button>
-        </div>
-      </div>
-    `;
-
-    // Close on overlay click
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) overlay.remove();
-    });
-
-    // Close on Escape
-    const escHandler = (e) => {
-      if (e.key === 'Escape') {
-        overlay.remove();
-        document.removeEventListener('keydown', escHandler);
-      }
-    };
-    document.addEventListener('keydown', escHandler);
-
-    document.body.appendChild(overlay);
-  },
-
-  async saveDocumentMetadata(docId) {
-    const result = document.getElementById('editDocumentResult');
-    const title = document.getElementById('editTitle')?.value.trim() || '';
-    const description = document.getElementById('editDescription')?.value.trim() || '';
-    const tags = this.parseTags(document.getElementById('editTags')?.value || '');
-    if (!title || !description || tags.length === 0) {
-      result.textContent = ' Cần có tiêu đề, mô tả và ít nhất một nhãn.';
-      result.className = 'text-sm text-danger';
-      return;
-    }
-    const response = await api.updateDocument(docId, { title, description, tags });
-    if (!response.success) {
-      result.textContent = ` ${response.error?.message || 'Không thể lưu thông tin.'}`;
-      result.className = 'text-sm text-danger';
-      return;
-    }
-    result.textContent = ' Đã lưu.';
-    result.className = 'text-sm text-success';
-    app.showToast('Đã cập nhật thông tin tài liệu.', 'success');
-  },
-
-  // ------------------------------------------------------------------
-  // Create vault modal
-  // ------------------------------------------------------------------
-
-  showCreateVaultModal() {
-    // Remove existing modal
-    const existing = document.querySelector('.modal-overlay:not(#loginModal)');
-    if (existing) existing.remove();
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.setAttribute('role', 'dialog');
-    overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', 'Tạo kho tài liệu mới');
-    overlay.innerHTML = `
-      <div class="modal">
-        <div class="modal-header">
-          <h2>Tạo kho tài liệu mới</h2>
-        </div>
-        <form id="createVaultForm" onsubmit="return app.handleCreateVault(event)">
-          <div class="form-group">
-            <label for="vaultName">Tên kho tài liệu <span aria-label="Bắt buộc">*</span></label>
-            <input type="text" id="vaultName" class="form-input" placeholder="Nhập tên kho tài liệu" required aria-required="true">
-          </div>
-          <div class="form-group">
-            <label for="vaultType">Loại kho</label>
-            <select id="vaultType" class="form-select">
-              <option value="DEPARTMENT">Department</option>
-              <option value="COMMON">Common</option>
-              <option value="PROJECT">Project</option>
-              <option value="PERSONAL">Personal</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="vaultDesc">Mô tả (không bắt buộc)</label>
-            <input type="text" id="vaultDesc" class="form-input" placeholder="Mô tả ngắn về kho tài liệu">
-          </div>
-          <div class="form-error" id="vaultError" style="display:none" role="alert"></div>
-          <div class="modal-actions">
-            <button type="button" class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Hủy</button>
-            <button type="submit" class="btn btn-primary" id="createVaultBtn">Tạo</button>
-          </div>
-        </form>
-      </div>
-    `;
-
-    // Close on overlay click
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) overlay.remove();
-    });
-
-    document.body.appendChild(overlay);
-    document.getElementById('vaultName').focus();
-  },
-
-  async handleCreateVault(event) {
-    event.preventDefault();
-    const name = document.getElementById('vaultName').value.trim();
-    const type = document.getElementById('vaultType').value;
-    const desc = document.getElementById('vaultDesc').value.trim();
-    const errorEl = document.getElementById('vaultError');
-    const btn = document.getElementById('createVaultBtn');
-
-    if (!name) {
-      errorEl.textContent = 'Vui lòng nhập tên kho tài liệu.';
-      errorEl.style.display = 'block';
-      return;
-    }
-
-    errorEl.style.display = 'none';
-    btn.disabled = true;
-    btn.textContent = 'Đang tạo...';
-
-    try {
-      const resp = await api.createVault({ name, vault_type: type, description: desc || undefined });
-      if (resp.success) {
-        const overlay = btn.closest('.modal-overlay');
-        if (overlay) overlay.remove();
-        app.showToast('Đã tạo kho tài liệu!', 'success');
-        app.renderVaults();
-      } else {
-        errorEl.textContent = resp.error?.message || 'Lỗi tạo kho.';
-        errorEl.style.display = 'block';
-      }
-    } catch (err) {
-      errorEl.textContent = `Lỗi: ${err.message}`;
-      errorEl.style.display = 'block';
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Tạo';
-    }
-  },
-
-  copyCitation(ref) {
-    if (!ref) { app.showToast('Không có thông tin trích dẫn.', 'warning'); return; }
-    navigator.clipboard.writeText(ref).then(() => {
-      app.showToast('Đã sao chép trích dẫn!', 'success');
-    }).catch(() => {
-      app.showToast('Không thể sao chép.', 'error');
-    });
-  },
-
-  // ------------------------------------------------------------------
-  // Helpers
-  // ------------------------------------------------------------------
-
-  showToast(message, type = 'info', duration = 3000) {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.setAttribute('role', 'alert');
-    toast.innerHTML = message;
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.3s';
-      setTimeout(() => toast.remove(), 300);
-    }, duration);
-  },
-
-  esc(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-  },
-
-  parseTags(value) {
-    const seen = new Set();
-    return String(value || '')
-      .split(/[,\n]/)
-      .map(tag => tag.trim().replace(/\s+/g, ' '))
-      .filter(tag => {
-        const key = tag.toLocaleLowerCase('vi');
-        if (!tag || seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-  },
-
-  highlight(text, query) {
-    if (!query || !text) return text || '';
-    const terms = query.split(/\s+/).filter(t => t.length > 1);
-    let result = text;
-    terms.forEach(term => {
-      const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-      result = result.replace(re, '<mark>$1</mark>');
-    });
-    return result;
-  },
-
-  renderMarkdown(text) {
-    if (!text) return '';
-    // Escape HTML first
-    let result = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    // Then apply markdown formatting
-    result = result
-      .replace(/### (.+)/g, '<h3>$1</h3>')
-      .replace(/## (.+)/g, '<h2>$1</h2>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/^- (.+)/gm, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-      .replace(/\n{2,}/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-    // Wrap in paragraph if not already wrapped
-    if (!result.startsWith('<h') && !result.startsWith('<p')) {
-      result = '<p>' + result + '</p>';
-    }
-    return result;
-  },
-};
-
-// ------------------------------------------------------------------
-// Auth module
-// ------------------------------------------------------------------
-
-class AuthModule {
-  async handleLogin(event) {
-    event.preventDefault();
-    const user = document.getElementById('loginUser').value.trim();
-    const pass = document.getElementById('loginPass').value;
-    const errorEl = document.getElementById('loginError');
-    const btn = event.target.querySelector('button[type="submit"]');
-
-    if (!user || !pass) {
-      errorEl.textContent = 'Vui lòng nhập tên đăng nhập và mật khẩu.';
-      errorEl.style.display = 'block';
-      return false;
-    }
-
-    errorEl.style.display = 'none';
-    if (btn) btn.disabled = true;
-    try {
-      const resp = await api.login(user, pass);
-      if (resp.success) {
-        this.onLogin(user);
-      } else {
-        errorEl.textContent = resp.error?.message || 'Đăng nhập thất bại.';
-        errorEl.style.display = 'block';
-      }
-    } catch (err) {
-      errorEl.textContent = `Lỗi kết nối: ${err.message}`;
-      errorEl.style.display = 'block';
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-    return false;
+'use strict';
+const $ = (id) => document.getElementById(id);
+const esc = (value) => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = (value) => { if(!value)return i18n.t('Not recorded'); const date=typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)?new Date(...value.split('-').map((n,i)=>Number(n)-(i===1?1:0))):new Date(typeof value==='number'?value*1000:value); return date.toLocaleDateString(i18n.locale); };
+const today = () => new Date().toLocaleDateString('en-CA');
+const list = (data, key) => Array.isArray(data) ? data : data?.[key] || data?.items || [];
+const state = {user:null,status:{},vaults:[],documents:[],answer:null,question:'',uploads:[],epoch:0,timer:null,documentOffset:0,documentTotal:0,summary:{},session:0,uploadBusy:false};
+let languageDirty=false;
+const brand = i18n.markup('<span class="brand"><span class="brand-icon">§</span> Legal Library</span>');
+function notice(text, kind='') { return `<div class="notice ${kind}" role="status">${esc(i18n.message(text))}</div>`; }
+function button(label, action, data='', kind='') { return `<button type="button" class="btn ${kind}" data-action="${action}" data-id="${esc(data)}">${label}</button>`; }
+function input(name,label,type='text',value='',extra='') { return `<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" value="${esc(value)}" ${extra}></div>`; }
+function select(name,label,options,value='') { return `<div class="field"><label for="${name}">${label}</label><select id="${name}" name="${name}">${options.map(([v,t])=>`<option value="${esc(v)}" ${v===value?'selected':''}>${esc(t)}</option>`).join('')}</select></div>`; }
+function toast(message,error=false) { const node=document.createElement('div');node.className='toast'+(error?' error':'');node.textContent=message;$('notifications').append(node);setTimeout(()=>node.remove(),6000); }
+function modal(title,html) { $('dialog').innerHTML=i18n.html`<div class="dialog-head"><h2 id="dialogTitle">${esc(title)}</h2><button class="close" data-action="close" aria-label="Close dialog">×</button></div><div class="dialog-body">${html}</div>`;if(!$('dialog').open)$('dialog').showModal(); }
+function head(title,subtitle,actions='') {return i18n.html`<div class="page-head"><div><div class="eyebrow">Your organization’s knowledge</div><h1>${title}</h1><p class="muted">${subtitle}</p></div><div class="actions">${actions}</div></div>`;}
+function empty(title,description,action=''){return `<div class="empty"><div class="symbol">◇</div><h2>${title}</h2><p>${description}</p>${action}</div>`;}
+const labels={UPLOADED:i18n.t('Queued'),OCR_PENDING:i18n.t('Reading file'),OCR_COMPLETED:i18n.t('Text extracted'),PARSING:i18n.t('Organizing content'),PARSED:i18n.t('Content organized'),OCR_RUNNING:i18n.t('Reading file'),PARSING_RUNNING:i18n.t('Organizing content'),CHUNKING_RUNNING:i18n.t('Preparing passages'),EMBEDDING_RUNNING:i18n.t('Building search'),INDEXING_RUNNING:i18n.t('Finishing'),CHUNKING:i18n.t('Preparing passages'),CHUNKED:i18n.t('Passages prepared'),EMBEDDING:i18n.t('Building search'),EMBEDDED:i18n.t('Search prepared'),INDEXING:i18n.t('Finishing'),READY:i18n.t('Ready'),FAILED:i18n.t('Needs attention'),ARCHIVED:i18n.t('Archived')};
+function statusBadge(status){return `<span class="badge ${status==='READY'?'ready':status==='FAILED'?'failed':status==='ARCHIVED'?'':'working'}">${esc(labels[status]||i18n.display(status)||i18n.t('Queued'))}</span>`;}
+function routeParts(){const raw=(location.hash||'#/').slice(1);const [path,query]=raw.split('?');return {path:path||'/',params:new URLSearchParams(query||'')};}
+function navigate(path){location.hash='#'+path;}
+function formError(form,error){let box=form.querySelector('[data-error]');if(!box){box=document.createElement('div');box.dataset.error='';form.prepend(box)}box.innerHTML=notice(error.message,'error');box.scrollIntoView({block:'nearest'});}
+async function withForm(form,fn){const submit=form.querySelector('[type=submit]');if(submit?.disabled)return;if(submit)submit.disabled=true;try{await fn(Object.fromEntries(new FormData(form)))}catch(error){formError(form,error)}finally{if(submit)submit.disabled=false}}
+
+async function init(){
+ try{state.status=await api.get('/v1/setup/status');const me=await api.get('/v1/auth/me').catch(()=>null);if(!me?.account&&state.user)clearSession();state.user=me?.account||null;await render()}
+ catch(error){$('root').innerHTML=empty(i18n.t('The server is unavailable'),esc(error.message),button(i18n.t('Try again'),'reload','','primary'))}
+}
+function authPage(mode){
+ const first=state.status.needs_admin;
+ if(first)mode='bootstrap';else if(!['login','signup','reset'].includes(mode))mode='login';
+ const titles={login:i18n.t('Welcome back'),signup:i18n.t('Create your account'),bootstrap:i18n.t('Set up your library'),reset:i18n.t('Reset your password')};
+ const description={login:i18n.t('Sign in to your organization’s document library.'),signup:i18n.t('Your administrator will approve access, unless you have an invitation.'),bootstrap:i18n.t('Create the first administrator account on this server.'),reset:i18n.t('Ask your administrator for a recovery code. It is valid for one hour.')};
+ const params=routeParts().params;
+ let fields='';
+ if(mode==='bootstrap')fields+=input('code',i18n.t('Server setup code'),'password',params.get('code')||'','required autocomplete="off"')+i18n.markup('<p class="muted">Find this code in Legal Library Server on the host machine. It prevents someone else on the network from claiming your server.</p>');
+ if(mode==='signup'||mode==='bootstrap')fields+=input('display_name',i18n.t('Your name'),'text','','required maxlength="120" autocomplete="name"');
+ if(mode!=='reset')fields+=input('username',i18n.t('Username'),'text','','required minlength="3" maxlength="80" autocomplete="username"');
+ if(mode==='signup')fields+=input('email',i18n.t('Email (optional)'),'email','','autocomplete="email"')+input('code',i18n.t('Invitation code (optional)'),'text',params.get('code')||'','autocomplete="off"');
+ if(mode==='reset')fields+=input('code',i18n.t('Recovery code'),'password','','required autocomplete="off"');
+ fields+=input(mode==='reset'?'new_password':'password',mode==='reset'?i18n.t('New password'):i18n.t('Password'),'password','',`required ${mode==='login'?'':'minlength="12"'} maxlength="256" autocomplete="${mode==='login'?'current-password':'new-password'}"`);
+ if(mode!=='login')fields+=i18n.markup('<small>Use at least 12 characters. A memorable phrase works well.</small>')+input('confirm_password',i18n.t('Confirm password'),'password','','required minlength="12" autocomplete="new-password"');
+ const links=mode==='login'?i18n.markup('<a href="#/signup">Create an account</a><a href="#/reset">Forgot password?</a>'):i18n.markup('<a href="#/login">Back to sign in</a>');
+ $('root').innerHTML=i18n.html`<div class="auth-layout"><aside class="auth-story">${brand}<div><div class="eyebrow">Knowledge you can check</div><h1>Find the answer.<br>See the source.</h1><p>A shared home for your policies and legal documents, with passages you can verify and references you can keep.</p></div><small>Built for Vietnamese documents. Available to your team.</small></aside><main class="auth-area" id="content"><div class="auth-card">${brand}<h1>${titles[mode]}</h1><p class="muted">${description[mode]}</p><form data-form="auth" data-mode="${mode}"><div data-error></div>${fields}<button class="btn primary block" type="submit">${mode==='login'?i18n.t('Sign in'):mode==='signup'?i18n.t('Request access'):mode==='bootstrap'?i18n.t('Create administrator'):i18n.t('Reset password')}</button></form><div class="auth-links">${first?'':links}</div></div></main></div>`;
+ if(params.has('code'))history.replaceState(null,'','#/'+(first?'welcome':mode));
+}
+function shell(path){
+ const nav=[['/',i18n.t('Overview')],['/ask',i18n.t('Ask your documents')],['/search',i18n.t('Search')],['/documents',i18n.t('Documents')],['/vaults',i18n.t('Collections')],['/history',i18n.t('Saved answers')]];
+ if(state.user.role==='admin')nav.push(['/users',i18n.t('People')],['/settings',i18n.t('Server settings')]);
+ $('root').innerHTML=i18n.html`<div class="shell"><aside class="sidebar">${brand}<small>Find it. Verify it. Keep it.</small><nav class="nav" aria-label="Main navigation">${nav.map(([href,label])=>`<a href="#${href}" ${path===href?'aria-current="page"':''} class="${path===href?'active':''}">${label}</a>`).join('')}</nav><div class="sidebar-bottom"><a href="#/account">${esc(state.user.display_name)}</a><br><small>${state.user.role==='admin'?i18n.t('Administrator'):i18n.t('Team member')}</small><br>${button(i18n.t('Sign out'),'logout','','small')}</div></aside><section class="workspace"><header class="topbar"><span class="mode"><span class="dot"></span>${state.status.mode==='ai'?i18n.t('AI-assisted source selection'):(['vision','tesseract_then_vision'].includes(state.status.ocr_mode)?i18n.t('Local search · vision OCR'):i18n.t('Local document library'))}</span><div class="row"><a href="#/help">Help</a><a class="pill" href="#/account">${esc(state.user.display_name)}</a></div></header><main class="content" id="content" tabindex="-1"><div class="loading"><span class="spinner"></span> Loading…</div></main></section></div>`;
+}
+async function loadCollections(){
+ const epoch=state.epoch;const vaults=[];let offset=0;
+ do{const result=await api.get('/v1/vaults',{limit:100,offset});if(epoch!==state.epoch)return;
+  const page=list(result,'vaults');vaults.push(...page);offset+=page.length;
+  if(!page.length||offset>=(result.total??offset))break;
+ }while(true);
+ state.vaults=vaults;return vaults;
+}
+async function loadDocuments(params=routeParts().params){
+ const epoch=state.epoch;const view=params.get('view')||'ACTIVE';
+ const offset=Math.max(0,Math.min(2147483647,Number.parseInt(params.get('offset'),10)||0));
+ const result=await api.get('/v1/documents',{limit:100,offset,vault_id:params.get('vault'),q:params.get('q'),
+  status:view==='ALL'?'':view==='ARCHIVED'?'ARCHIVED':'ACTIVE',
+  processing:['READY','FAILED','PROCESSING'].includes(view)?view:''});
+ if(epoch!==state.epoch)return;
+ state.documentOffset=offset;state.documentTotal=result.total??list(result).length;
+ state.documents=list(result,'documents');return state.documents;
+}
+async function loadSummary(){const epoch=state.epoch;const summary=await api.get('/v1/documents/summary');if(epoch===state.epoch)state.summary=summary;}
+function documentCount(){return i18n.html`Documents ${state.documents.length?state.documentOffset+1:0}–${state.documents.length?state.documentOffset+state.documents.length:0} of ${state.documentTotal}. Processing updates automatically.`;}
+function documentPaging(){return `${state.documentOffset?button(i18n.t('Previous'),'previous-documents'):''}${state.documentOffset+100<state.documentTotal?button(i18n.t('Next'),'next-documents'):''}`;}
+function stopPendingWork(){api.cancelPending();state.session++;state.uploads=[];state.uploadBusy=false;}
+function clearSession(){
+ stopPendingWork();state.epoch++;clearTimeout(state.timer);
+ Object.assign(state,{user:null,vaults:[],documents:[],answer:null,question:'',uploads:[],uploadBusy:false,summary:{},detail:null,config:null,ocrConfig:null});
+ if($('dialog').open)$('dialog').close();$('dialog').innerHTML='';$('notifications').innerHTML='';
+}
+async function render(){
+ languageDirty=false;
+ clearTimeout(state.timer);const epoch=++state.epoch;const {path,params}=routeParts();
+ if(!state.user){authPage(path.slice(1)||'login');return}
+ shell(path);
+ try{
+  let html;
+  if(path==='/'){await Promise.all([loadCollections(),loadSummary()]);html=overview()}
+  else if(path==='/vaults'){await loadCollections();html=collections()}
+  else if(path==='/documents'){await Promise.all([loadCollections(),loadDocuments()]);html=documents(params)}
+  else if(path==='/upload'){await loadCollections();html=uploadPage(params)}
+  else if(path==='/ask'||path==='/search'){await loadCollections();html=questionPage(path,params)}
+  else if(path==='/history'){html=historyPage(list(await api.get('/v1/history')))}
+  else if(path==='/account'){html=accountPage(list(await api.get('/v1/account/sessions')))}
+  else if(path==='/users'&&state.user.role==='admin'){html=usersPage(list(await api.get('/v1/accounts')))}
+  else if(path==='/settings'&&state.user.role==='admin'){const [config,ocr]=await Promise.all([api.get('/v1/setup/config'),api.get('/v1/ocr/config')]);html=settingsPage(config,ocr)}
+  else if(path==='/help'){html=helpPage()}
+  else{navigate('/');return}
+  if(epoch!==state.epoch)return;$('content').innerHTML=html;
+  if(path==='/documents'&&state.documents.some(d=>!['READY','FAILED'].includes(d.processing_state)&&d.status!=='ARCHIVED'))pollDocuments(epoch,params);
+ }catch(error){if(epoch===state.epoch&&$('content'))$('content').innerHTML=notice(error.message,'error')+button(i18n.t('Try again'),'reload','','primary')}
+}
+function overview(){const ready=state.summary.ready||0;return i18n.html`<section class="hero"><div class="eyebrow">Your evidence, in one place</div><h1>Good answers start<br>with the right documents.</h1><p>Search your team’s knowledge and find source passages you can inspect, share and return to.</p><div class="actions"><a class="btn primary" href="#/ask">Ask your documents →</a><a class="btn" href="#/upload">Upload documents</a></div></section><div class="grid"><div class="card"><div class="stat">${ready}</div><p>Documents ready to use</p></div><div class="card"><div class="stat">${state.vaults.length}</div><p>Collections you can access</p></div><div class="card"><div class="stat">${state.summary.failed||0}</div><p>Documents needing attention</p></div></div><br><div class="panel"><h2>A simple path to your first answer</h2><div class="grid"><div><div class="step-number">01 / COLLECT</div><h3>Create a collection</h3><p class="muted">Keep a set of policies together. Share it with the people who need it.</p><a href="#/vaults">Manage collections →</a></div><div><div class="step-number">02 / UPLOAD</div><h3>Add your source documents</h3><p class="muted">Upload PDF or DOCX files. You’ll see when each document is ready.</p><a href="#/upload">Add documents →</a></div><div><div class="step-number">03 / VERIFY</div><h3>Ask and inspect the source</h3><p class="muted">Choose your scope and date, then open the passage behind each result.</p><a href="#/ask">Ask a question →</a></div></div></div>${state.status.mode==='local'?notice(['vision','tesseract_then_vision'].includes(state.status.ocr_mode)?i18n.t('Search runs locally. Scanned page images may be sent to the administrator-approved vision OCR provider.'):i18n.t('Local search and Tesseract OCR run on this server. Your administrator can separately enable AI-assisted selection or vision OCR.')):notice(i18n.t('AI-assisted selection is enabled. Your administrator controls which provider processes questions and relevant document passages.'))}`;}
+function collections(){return head(i18n.t('Collections'),i18n.t('Organize documents and choose who can read or contribute.'),button(i18n.t('+ New collection'),'new-collection','','primary'))+(state.vaults.length?`<div class="grid">${state.vaults.map(v=>i18n.html`<article class="card collection-card"><div class="source-label">${esc({PERSONAL:i18n.t('Personal collection'),DEPARTMENT:i18n.t('Team collection'),COMMON:i18n.t('Shared collection')}[v.vault_type]||i18n.t('Collection'))}</div><h2>${esc(v.name)}</h2><p>${esc(v.description||i18n.t('A collection of your team’s documents.'))}</p><p>${v.document_count||0} documents · ${esc(i18n.display(v.status))}</p><div class="actions"><a class="btn small" href="#/documents?vault=${v.id}">Open</a><a class="btn small" href="#/ask?vault=${v.id}">Ask</a>${v.can_manage?button(i18n.t('Sharing'),'sharing',v.id,'small'):''}</div></article>`).join('')}</div>`:empty(i18n.t('Create a home for your documents'),i18n.t('Start with a collection such as Procurement policies or Internal procedures.'),button(i18n.t('Create collection'),'new-collection','','primary')))}
+function collectionOptions(allLabel=i18n.t('All accessible collections')){return [[allLabel?'':state.vaults[0]?.id||'',allLabel||i18n.t('Choose a collection')],...state.vaults.filter(v=>v.status==='ACTIVE').map(v=>[v.id,v.name])];}
+function documents(params){
+ return head(i18n.t('Documents'),i18n.t('Find a document across your library, inspect its source and track processing.'),i18n.markup('<a class="btn primary" href="#/upload">+ Upload documents</a>'))+
+ i18n.html`<form data-form="document-filters" class="toolbar">
+ ${select('vault',i18n.t('Collection'),collectionOptions(),params.get('vault')||'')}
+ ${input('q',i18n.t('Title or document number'),'search',params.get('q')||'',i18n.markup('maxlength="200" placeholder="Search all matching documents…"'))}
+ ${select('view',i18n.t('Show'),[['ACTIVE',i18n.t('Active documents')],['READY',i18n.t('Ready to use')],['FAILED',i18n.t('Needs attention')],['PROCESSING',i18n.t('Processing')],['ARCHIVED',i18n.t('Archived')],['ALL',i18n.t('All documents')]],params.get('view')||'ACTIVE')}
+ <button type="submit" class="btn primary">Apply filters</button><a class="btn" href="#/documents">Clear filters</a></form>
+ <div class="panel table-wrap" id="document-table">${documentRows(state.documents)}</div>
+ <div class="row-between"><p class="muted" id="document-count">${documentCount()}</p><div class="actions" id="document-paging">${documentPaging()}</div></div>`;
+}
+function documentRows(rows){return rows.length?i18n.html`<table><thead><tr><th>Document</th><th>Status</th><th>Effective date</th><th>Actions</th></tr></thead><tbody>${rows.map(d=>`<tr data-document-title="${esc(d.title.toLowerCase())}"><td><button class="link-button title" data-action="document" data-id="${d.id}">${esc(d.title)}</button><small>${esc(d.issuing_authority)}</small>${d.processing_error?`<small class="error-text">${esc(i18n.message(d.processing_error))}</small>`:''}</td><td>${statusBadge(d.status==='ARCHIVED'?'ARCHIVED':d.processing_state)}</td><td>${esc(d.effective_date||i18n.t('Not verified'))}</td><td><div class="actions">${d.processing_state==='READY'&&d.status==='ACTIVE'?i18n.html`<a class="btn small" href="#/ask?document=${d.id}&vault=${d.vault_id}">Ask</a>`:''}${d.can_manage&&d.status==='ACTIVE'&&d.processing_state==='FAILED'?button(i18n.t('Retry'),'retry',d.id,'small'):''}${button(i18n.t('Details'),'document',d.id,'small')}</div></td></tr>`).join('')}</tbody></table>`:empty(i18n.t('No matching documents'),i18n.t('Try another collection, title or status. You can also add a document to a collection you contribute to.'),i18n.markup('<a class="btn" href="#/documents">Clear filters</a>'));}
+function pollDocuments(epoch,params){state.timer=setTimeout(async()=>{
+ if(epoch!==state.epoch)return;
+ try{await loadDocuments(params);if(epoch!==state.epoch)return;
+  if($('document-table'))$('document-table').innerHTML=documentRows(state.documents);
+  if($('document-count'))$('document-count').textContent=documentCount();
+  if($('document-paging'))$('document-paging').innerHTML=documentPaging();
+  if(state.documents.some(d=>!['READY','FAILED'].includes(d.processing_state)&&d.status!=='ARCHIVED'))pollDocuments(epoch,params);
+ }catch(error){if(epoch===state.epoch&&error.name!=='AbortError')toast(i18n.t('Could not refresh processing status. Reload to try again.'),true);}
+ },4000)}
+function uploadPage(params){if(state.uploadBusy)return head(i18n.t('Uploading documents'),i18n.t('Your current batch is being sent to the server.'))+notice(i18n.t('Keep this browser open until uploading finishes. You can browse other pages while processing continues.'))+i18n.markup('<a class="btn" href="#/documents">View documents</a>');return head(i18n.t('Add documents'),i18n.t('Choose files, check their names and let the library prepare them.'))+(!state.vaults.some(v=>v.can_upload&&v.status==='ACTIVE')?empty(i18n.t('Choose a collection you can contribute to'),i18n.t('Ask a collection manager for contributor access, or create your own collection.'),button(i18n.t('Create collection'),'new-collection','','primary')):i18n.html`<form data-form="upload" id="upload-form"><div class="panel"><div class="form-grid">${select('vault_id',i18n.t('Save to collection'),[['',i18n.t('Choose a collection')],...state.vaults.filter(v=>v.can_upload&&v.status==='ACTIVE').map(v=>[v.id,v.name])],params.get('vault')||'')}${input('issuing_authority',i18n.t('Issued by (optional)'),'text','',i18n.markup('placeholder="e.g. Your organization"'))}</div><div class="dropzone"><h2>Select your documents</h2><p class="muted">PDF and DOCX · up to 25 MB per file · up to 50 files per batch</p><input type="file" id="upload-files" multiple accept=".pdf,.docx" aria-label="Select documents"><p><button class="link-button" type="button" data-action="choose-folder">Or choose a folder</button></p><input class="hidden" id="folder-files" type="file" webkitdirectory multiple aria-label="Select a document folder"></div><div id="upload-preview">${uploadPreview()}</div><details><summary>Document details (optional)</summary><div class="form-grid">${select('document_type',i18n.t('Document type'),[['INTERNAL_REGULATION',i18n.t('Policy or internal document')],['DECISION',i18n.t('Decision')],['CIRCULAR',i18n.t('Circular')],['DECREE',i18n.t('Decree')],['LAW',i18n.t('Law')]])}${input('effective_date',i18n.t('Effective from'),'date')}${input('expiration_date',i18n.t('Effective until'),'date')}${input('tags',i18n.t('Tags'),'text','',i18n.markup('placeholder="procurement, internal"'))}</div><p class="muted">Dates apply to this batch. Leave them empty if they have not been verified.</p></details><div data-error></div><div class="row-between"><small>Scanned pages need OCR on the server. Unreadable files remain visible for correction.</small><button type="submit" class="btn primary" id="upload-submit">Upload documents</button></div></div></form><div id="upload-summary"></div>`);}
+function uploadPreview(){return state.uploads.map((u,i)=>`<div class="upload-item"><div class="row-between"><strong>${esc(u.file.name)}</strong><small>${(u.file.size/1048576).toFixed(1)} MB</small></div>${input('file-title-'+i,i18n.t('Document title'),'text',u.title,'required maxlength="300"')}<div id="upload-state-${i}">${u.done?notice(i18n.t('Uploaded. Processing continues in Documents.'),'success'):u.error?notice(u.error,'error'):''}</div></div>`).join('')}
+function questionPage(path,params){const ask=path==='/ask';const documentId=params.get('document');return head(ask?i18n.t('Ask your documents'):i18n.t('Search the library'),ask?i18n.t('Find relevant source passages, then check the wording and context.'):i18n.t('Look up a policy, phrase, document number or topic.'))+i18n.html`<form data-form="${ask?'ask':'search'}" class="panel" id="question-form"><div class="toolbar">${select('vault_id',i18n.t('Collection'),collectionOptions(),params.get('vault')||'')}${input('as_of',i18n.t('Effective on'),'date',today())}</div>${documentId?notice(i18n.t('This question is limited to the document you selected.'))+`<input type="hidden" name="document_id" value="${esc(documentId)}">`:''}<div class="search-box"><label class="field" for="query">${ask?i18n.t('Your question'):i18n.t('Search terms')}<textarea name="query" id="query" required maxlength="4000" placeholder="${ask?'Ví dụ: Hồ sơ đề nghị mua sắm cần những tài liệu nào?':i18n.t('e.g. đấu thầu, Article 5, procurement approval')}">${esc(params.get('q')||'')}</textarea></label></div><div class="row-between"><small>Only collections you can access are searched. Unknown effective dates are marked.</small><button class="btn primary" type="submit">${ask?i18n.t('Find supporting passages'):i18n.t('Search')}</button></div><div data-error></div></form><div id="results" aria-live="polite"></div>`;}
+function resultSource(c,index,text=''){return i18n.html`<article class="source-card"><div class="source-label">Source ${index+1}</div><h3>${esc(c.document_title||c.label||i18n.t('Document'))}</h3><div class="row"><span class="badge">${esc(c.source_anchor?.canonical_reference||c.label||i18n.t('Source passage'))}</span><small>Page ${c.source_anchor?.page||'—'} · Effective: ${esc(c.effective_date||i18n.t('Not verified'))}</small></div>${text?`<div class="quote">${esc(text)}</div>`:''}<p class="muted">${esc(c.authority||'')}</p><button class="btn small" type="button" data-action="source" data-document="${c.document_id}" data-version="${c.document_version_id}" data-node="${c.knowledge_node_id}" data-page="${c.source_anchor?.page||1}">Inspect source →</button></article>`;}
+function answerView(answer,question){state.answer=answer;state.question=question;const noEvidence=answer.status==='NO_EVIDENCE';return i18n.html`<section class="panel"><div class="row-between"><span class="eyebrow">${noEvidence?i18n.t('More evidence needed'):i18n.t('Source quotations')}</span><span class="badge">${noEvidence?i18n.t('No supporting evidence'):i18n.t('Review source context')}</span></div><h2>${esc(question)}</h2><div class="answer-meta"><span>Effective on ${esc(answer.as_of||today())}</span><span>${answer.citations?.length||0} sources</span><span>Saved privately to your account</span></div>${noEvidence?notice(i18n.t('No sufficiently relevant source was found in this scope. Try a more specific question, a different collection, or add the missing document.'),'warning'):`<div class="result-text answer-body">${esc(answer.response?.content)}</div>`}${(answer.limitations||[]).map(l=>notice(l.description||l,'warning')).join('')}${(answer.citations||[]).map((c,i)=>resultSource(c,i)).join('')}<div class="answer-tools"><div class="actions">${button(i18n.t('Copy with references'),'copy-answer')}${button(i18n.t('Download answer'),'download-answer')}<label for="answer-feedback">Was this useful?</label><select id="answer-feedback" class="feedback-select"><option value="">Choose feedback…</option><option value="useful">Useful</option><option value="wrong_source">Wrong source</option><option value="outdated">Outdated information</option><option value="incomplete">Incomplete</option><option value="unsupported">Does not support the question</option></select></div><p class="source-footer">Quotations are checked against your uploaded documents. Relevance, completeness and legal applicability still need review.</p></div></section>`;}
+function historyPage(rows){return head(i18n.t('Saved answers'),i18n.t('Your questions and source references, available when you need them.'))+`<div class="panel">${rows.length?rows.map(r=>`<div class="list-line row-between"><div><button class="link-button" data-action="history" data-id="${r.id}">${esc(r.question)}</button><small class="muted"> · ${fmtDate(r.created_at)}</small>${r.feedback?` <span class="badge">${esc(i18n.display(r.feedback))}</span>`:''}</div>${button(i18n.t('Delete'),'delete-history',r.id,'small danger')}</div>`).join(''):empty(i18n.t('Your research will appear here'),i18n.t('Ask a question to save its answer and source references.'),i18n.markup('<a class="btn primary" href="#/ask">Ask a question</a>'))}</div><div id="results"></div>`;}
+function accountPage(sessions){return head(i18n.t('Your account'),i18n.t('Manage your profile, password and signed-in devices.'))+i18n.html`<div class="panel account-form"><h2>Profile</h2><form data-form="profile">${input('display_name',i18n.t('Name'),'text',state.user.display_name,'required maxlength="120"')}${input('email',i18n.t('Email'),'email',state.user.email,'maxlength="254"')}<small>Username: ${esc(state.user.username)}</small><div data-error></div><br><button type="submit" class="btn primary">Save profile</button></form></div><div class="panel account-form"><h2>Change password</h2><form data-form="password">${input('current_password',i18n.t('Current password'),'password','','required autocomplete="current-password"')}${input('new_password',i18n.t('New password'),'password','','required minlength="12" maxlength="256" autocomplete="new-password"')}${input('confirm_password',i18n.t('Confirm new password'),'password','','required minlength="12" autocomplete="new-password"')}<p class="muted">Changing your password signs out all devices.</p><div data-error></div><button class="btn primary" type="submit">Update password</button></form></div><div class="panel"><h2>Signed-in sessions</h2>${sessions.map(s=>i18n.html`<div class="list-line row-between"><div>${s.current?i18n.t('This browser'):i18n.t('Browser session')}<small class="muted"> · Signed in ${fmtDate(s.created_at)} · Expires ${fmtDate(s.expires_at)}</small></div>${button(i18n.t('Sign out'),'revoke-session',s.id,'small')}</div>`).join('')}<hr class="divider">${button(i18n.t('Sign out of this browser'),'logout','','danger')}</div>`;}
+function usersPage(rows){return head(i18n.t('People'),i18n.t('Approve access, invite colleagues and manage accounts.'),button(i18n.t('Create invitation'),'invite','','primary'))+notice(i18n.t('Each person needs their own account. Collection owners decide which documents to share.'))+i18n.html`<div class="panel table-wrap"><table><thead><tr><th>Person</th><th>Role</th><th>Access</th><th>Manage</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.display_name)}</strong><small>${esc(r.username)}${r.email?' · '+esc(r.email):''}</small></td><td>${esc(i18n.display(r.role))}</td><td><span class="badge ${r.state}">${esc(i18n.display(r.state))}</span></td><td><div class="actions">${r.state==='pending'?button(i18n.t('Approve'),'approve',r.id,'small primary'):''}${r.id!==state.user.id?button(r.state==='disabled'?i18n.t('Enable'):i18n.t('Disable'),r.state==='disabled'?'approve':'disable',r.id,'small'):''}${button(i18n.t('Recovery code'),'reset-code',r.id,'small')}${r.id!==state.user.id?button(r.role==='admin'?i18n.t('Make member'):i18n.t('Make admin'),r.role==='admin'?'make-member':'make-admin',r.id,'small'):''}</div></td></tr>`).join('')}</tbody></table></div>`;}
+function settingsPage(config,ocr){state.config=config;state.ocrConfig=ocr;return head(i18n.t('Server settings'),i18n.t('Choose how this installation processes documents and questions.'))+i18n.html`<div class="panel"><h2>Processing mode</h2><p>Local mode searches and quotes documents on this machine. AI-assisted mode sends your question and relevant passages to the provider configured below.</p>${notice(state.status.mode==='ai'?i18n.t('AI-assisted source selection is enabled.'):i18n.t('Local search is active. Scanned-page OCR is configured separately below.'))}${state.status.mode==='ai'?button(i18n.t('Switch to local mode'),'local-mode'):i18n.markup('<a class="btn" href="#/upload">Continue with local mode</a>')}</div><form data-form="provider" class="panel"><h2>Optional AI provider</h2><p class="muted">Use an Ollama server with an embedding model and a chat model. Changing models may require rebuilding document search.</p>${input('base_url',i18n.t('Provider address'),'url',config.base_url,'required placeholder="http://localhost:11434/v1"')}${lanField('provider-lan',config.allow_lan)}<p class="muted">For another computer, use its LAN address, for example http://192.168.1.50:11434/v1. Ollama must listen on that computer’s network interface.</p>${input('model',i18n.t('Chat model'),'text',config.model,'required placeholder="qwen3:8b"')}${input('embedding_model',i18n.t('Embedding model'),'text',config.embedding_model||'bge-m3','required')}${input('api_key',config.has_api_key?i18n.t('Provider key (leave empty to keep at the same address)'):i18n.t('Provider key (if required)'),'password','','autocomplete="off"')}<details><summary>Advanced options</summary><div class="form-grid">${input('timeout_seconds',i18n.t('Response timeout (seconds)'),'number',config.timeout_seconds||60,'min="1" max="120"')}${input('max_tokens',i18n.t('Maximum response tokens'),'number',config.max_tokens||4096,'min="256" max="8192"')}${select('reasoning_effort',i18n.t('Reasoning'),[['none',i18n.t('None')],['low',i18n.t('Low')],['medium',i18n.t('Medium')]],config.reasoning_effort||'none')}</div></details><label class="check"><input type="checkbox" id="provider-consent" required><span>I have approved this destination to process my organization’s questions and document passages.</span></label><div data-error></div><br><div class="actions">${button(i18n.t('Test connection'),'test-provider')}<button type="submit" class="btn primary">Save and enable</button></div><div id="provider-test"></div></form>${ocrSettings(ocr)}<div class="panel"><h2>Server operations</h2><p>Use the Legal Library Server application on the host machine to manage the service, port, HTTPS certificate, backups and recovery.</p>${button(i18n.t('Check server status'),'server-status')}<div id="server-status"></div></div>`;}
+function lanField(id,checked){return i18n.html`<label class="check"><input id="${id}" type="checkbox" ${checked?'checked':''}><span>Allow this provider on my local network</span></label>`;}
+function ocrSettings(config){return i18n.html`<form data-form="ocr" class="panel"><h2>Reading scanned PDFs (OCR)</h2>
+ <p>Text PDFs and Word files are extracted on this server. These settings apply only to pages that need image recognition, independently of AI-assisted answers.</p>
+ ${notice(config.runtime.message,config.runtime.tesseract_available?'':'warning')}
+ ${select('ocr-mode',i18n.t('OCR method'),[['tesseract',i18n.t('Tesseract on this server')],['vision',i18n.t('Vision model (no Tesseract required)')],['tesseract_then_vision',i18n.t('Try Tesseract, then use vision if it fails')]],config.mode)}
+ <fieldset class="ocr-options" id="vision-settings" ${config.mode==='tesseract'?'hidden disabled':''}>
+ ${input('ocr-address',i18n.t('Vision provider address'),'url',config.base_url,'placeholder="http://192.168.1.50:11434/v1"')}
+ ${lanField('ocr-lan',config.allow_lan)}
+ ${input('ocr-model',i18n.t('Vision model'),'text',config.model,'maxlength="200" placeholder="Name of your installed vision model"')}
+ ${input('ocr-key',config.has_api_key?i18n.t('Vision key (leave empty to keep at the same address)'):i18n.t('Vision API key (optional for Ollama)'),'password','','autocomplete="off"')}
+ <div class="form-grid">${input('ocr-timeout',i18n.t('Time per scanned page (seconds)'),'number',config.timeout_seconds,'min="5" max="300"')}
+ ${input('ocr-tokens',i18n.t('Maximum page output tokens'),'number',config.max_tokens,'min="512" max="32768"')}
+ ${input('ocr-pages',i18n.t('Maximum vision pages per document'),'number',config.max_vision_pages,'min="1" max="200"')}</div>
+ ${notice(i18n.t('Vision OCR can omit or invent text. Verify numbers, dates and tables against the original. Provider charges may apply to page images.'))}
+ <label class="check"><input type="checkbox" id="ocr-consent"><span>I approve sending scanned page images to this provider, including automatic fallback when selected.</span></label>
+ </fieldset><div data-error></div><br><div class="actions">${button(i18n.t('Test OCR'),'test-ocr')}<button type="submit" class="btn primary">Save OCR settings</button></div>
+ <div id="ocr-test"></div><p class="muted">Test OCR sends only a generated test image. Saving affects new processing and retries; existing transcriptions stay unchanged. Retry failed documents after fixing settings.</p></form>`;}
+function ocrBody(form){
+ const get=id=>form.querySelector('#'+id);const body={mode:get('ocr-mode').value,base_url:get('ocr-address').value.trim(),model:get('ocr-model').value.trim(),api_key:get('ocr-key').value,
+ allow_lan:get('ocr-lan').checked,timeout_seconds:get('ocr-timeout').value,max_tokens:get('ocr-tokens').value,max_vision_pages:get('ocr-pages').value,consent:get('ocr-consent').checked};
+ if(body.mode!=='tesseract'&&(!body.model||!body.base_url||!body.consent))throw new Error(i18n.t('Enter a vision provider address and model, and approve sending scanned page images.'));
+ if(!body.api_key&&body.base_url.replace(/\/$/,'')===state.ocrConfig.base_url.replace(/\/$/,''))delete body.api_key;
+ return body;
+}
+function helpPage(){return head(i18n.t('Help'),i18n.t('A quick guide to using your library.'))+i18n.html`<div class="panel"><h2>Getting started</h2><ol><li>Create a collection and add colleagues in Sharing.</li><li>Upload PDF or DOCX files. Optional dates and tags help people understand them.</li><li>Wait for <strong>Ready</strong>. If a file needs attention, inspect the reason and retry.</li><li>Ask a specific question and select the relevant collection.</li><li>Open each source, check its version and surrounding text, then copy the answer with references.</li></ol><h2>Finding a document</h2><p>In Documents, choose a collection, enter part of its title or document number and choose Apply filters. Vietnamese titles also match without accents. Filters search the whole accessible library. Show lets you find ready, processing, needs-attention or archived documents. Clear filters returns to active documents.</p><h2>Contributing and uploading</h2><p>Viewers can read sources. Contributors can upload and edit details. Collection managers can also share access, retry processing, archive, restore and replace versions. Upload destinations only include collections you can contribute to.</p><p>You can browse this library while a batch uploads. Keep the browser open until all files have been sent; processing then continues on the server. Signing out cancels remaining transfers and clears selected files from this browser. A file already accepted by the server can still finish processing.</p><h2>Understanding the answer</h2><p>Answers contain exact source passages. With AI enabled, the model selects passages; the server verifies the quotations before showing them. A source can be accurately quoted and still be incomplete, outdated or inapplicable to your situation.</p><p>The effective date filter uses the dates recorded on your documents. Unknown dates are labelled. It does not automatically discover amendments or certify current law.</p><h2>Who can see my work?</h2><p>Collection owners control document access. Saved answers are private to your account and are hidden if you lose access to their source collections. Server administrators control accounts and processing settings; the host operator can access server backups.</p><h2>Scanned documents</h2><p>Scans need Tesseract with Vietnamese language data or an administrator-configured vision OCR provider. Vision OCR sends scanned page images to that provider and may misread or invent text. Unreadable or incomplete pages are reported instead of quietly skipped. Ask your administrator to configure OCR, then retry and compare the result with the original file.</p><h2>Need access or a password reset?</h2><p>Contact your organization’s administrator. They can approve an account, issue an invitation, or give you a recovery code. A password reset signs out existing sessions.</p></div>`;}
+
+document.addEventListener('submit',event=>{
+ const form=event.target;if(!form.dataset.form)return;event.preventDefault();
+ withForm(form,async body=>{
+  const type=form.dataset.form;
+  if(type==='auth'){
+   const mode=form.dataset.mode;if(mode!=='login'&&body.confirm_password!==(body.password||body.new_password))throw new Error(i18n.t('Passwords do not match.'));
+   delete body.confirm_password;
+   if(mode==='reset'){await api.post('/v1/auth/reset',body);toast(i18n.t('Password reset. Sign in with your new password.'));navigate('/login');return}
+   if(mode==='signup'||mode==='bootstrap'){
+    const result=await api.post('/v1/auth/'+(mode==='bootstrap'?'bootstrap':'signup'),body);
+    if(result.requires_approval){modal(i18n.t('Access requested'),notice(i18n.t('Your account is waiting for administrator approval. You can sign in once it is approved.'),'success')+i18n.markup('<a class="btn primary" href="#/login" data-action="close">Back to sign in</a>'));return}
+   }
+   const login=await api.post('/v1/auth/login',{username:body.username,password:body.password});state.user=login.account;state.status=await api.get('/v1/setup/status');navigate('/');await render();return;
   }
-
-  onLogin(userOrId, navigate = true) {
-    const user = typeof userOrId === 'string' ? { user_id: userOrId } : userOrId;
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById('userName').textContent = user.user_id;
-    document.getElementById('logoutBtn').style.display = 'inline-block';
-    app.state.user = user;
-    if (navigate) app.router.handleRoute();
+  if(type==='document-filters'){const params=new URLSearchParams();for(const key of ['vault','q','view'])if(body[key])params.set(key,body[key].trim());navigate('/documents?'+params);return}
+  if(type==='collection'){await api.post('/v1/vaults',{name:body.name,description:body.description,vault_type:'DEPARTMENT'});$('dialog').close();toast(i18n.t('Collection created.'));navigate('/vaults');await render()}
+  if(type==='upload'){await uploadBatch(form,body);return}
+  if(type==='ask'||type==='search'){
+   const epoch=state.epoch;const session=state.session;
+   $('results').innerHTML=i18n.markup('<div class="panel loading"><span class="spinner"></span> Finding relevant source passages…</div>');
+   try{const data=await api.post(type==='ask'?'/v1/answers':'/v1/search',body);if(epoch!==state.epoch||session!==state.session||!$('results'))return;$('results').innerHTML=type==='ask'?answerView(data,body.query):(data.evidence?.length?i18n.html`<p class="muted">${data.evidence.length} passages · ${esc(i18n.display(data.strategy))} search</p>`+data.evidence.map((e,i)=>resultSource(e,i,e.text)).join(''):empty(i18n.t('No results in this scope'),i18n.t('Try a document number, a distinctive phrase, or a broader collection.')))}catch(error){if(epoch!==state.epoch||session!==state.session)return;if($('results'))$('results').innerHTML='';throw error}return;
   }
+  if(type==='profile'){state.user=await api.patch('/v1/account',body);toast(i18n.t('Profile saved.'));await render()}
+  if(type==='password'){if(body.new_password!==body.confirm_password)throw new Error(i18n.t('Passwords do not match.'));stopPendingWork();await api.post('/v1/account/password',body);clearSession();toast(i18n.t('Password changed. Please sign in again.'));navigate('/login');await render()}
+  if(type==='share'){await api.post('/v1/vaults/'+form.dataset.id+'/members',body);toast(i18n.t('Sharing updated.'));await showSharing(form.dataset.id)}
+  if(type==='ocr'){await api.post('/v1/ocr/config',ocrBody(form));state.status=await api.get('/v1/setup/status');toast(i18n.t('OCR settings saved. Retry documents that need attention.'));await render();return}
+  if(type==='provider'){body.allow_lan=form.querySelector('#provider-lan').checked;if(!body.api_key&&body.base_url.replace(/\/$/,'')===state.config.base_url.replace(/\/$/,''))delete body.api_key;await api.post('/v1/setup/config',body);await api.post('/v1/setup/complete');state.status=await api.get('/v1/setup/status');toast(i18n.t('AI provider enabled. New uploads will use this configuration.'));await render()}
+  if(type==='version'){const data=new FormData(form);data.append('replace_document_id',form.dataset.id);const file=data.get('file');if(file.size>25*1048576)throw new Error(i18n.t('Choose a file of at most 25 MB.'));await api.post('/v1/uploads',data);$('dialog').close();toast(i18n.t('New version uploaded and queued.'));await render();return}
+  if(type==='metadata'){const id=form.dataset.id;await api.patch('/v1/documents/'+id,body);toast(i18n.t('Document details updated.'));$('dialog').close();await render()}
+ });
+});
 
-  logout() {
-    api.logout();
-    app.state.user = null;
-    document.getElementById('userName').textContent = 'Chưa đăng nhập';
-    document.getElementById('logoutBtn').style.display = 'none';
-    document.getElementById('loginModal').style.display = 'flex';
-    app.showToast('Đã đăng xuất.', 'info');
+async function uploadBatch(form,body){
+ if(state.uploadBusy)throw new Error(i18n.t('Another batch is uploading. Wait for it to finish.'));
+ if(!body.vault_id)throw new Error(i18n.t('Choose a collection.'));if(!state.uploads.length)throw new Error(i18n.t('Choose at least one PDF or DOCX file.'));
+ if(body.effective_date&&body.expiration_date&&body.effective_date>body.expiration_date)throw new Error(i18n.t('The end date must be after the effective date.'));
+ const batch=state.uploads;const session=state.session;
+ batch.forEach((u,i)=>{u.title=$('file-title-'+i)?.value.trim()||u.title;if(!u.title)throw new Error(i18n.t('Every file needs a title.'));if(u.file.size>25*1048576)throw new Error(u.file.name+i18n.t(' exceeds 25 MB.'))});
+ state.uploadBusy=true;
+ const controls=[...form.querySelectorAll('input,select,button')];controls.forEach(el=>el.disabled=true);
+ try{
+  for(let i=0;i<batch.length;i++){
+   if(session!==state.session)return;
+   const u=batch[i];if(u.done)continue;
+   const target=form.isConnected?$('upload-state-'+i):null;
+   if(target)target.innerHTML=i18n.markup('<div class="row"><span class="spinner"></span> Uploading…</div>');
+   const fd=new FormData();fd.append('file',u.file);fd.append('title',u.title);fd.append('filename',u.file.name);
+   for(const key of ['vault_id','document_type','effective_date','expiration_date','tags'])if(body[key])fd.append(key,body[key]);
+   fd.append('issuing_authority',body.issuing_authority||'Not recorded');
+   try{const result=await api.post('/v1/uploads',fd);if(session!==state.session)return;u.result=result;u.done=true;u.error='';if(target)target.innerHTML=notice(i18n.t('Uploaded. Preparing document…'),'success');}
+   catch(error){if(session!==state.session||error.name==='AbortError')return;u.error=error.message;if(target)target.innerHTML=notice(error.message,'error');}
   }
+  if(session!==state.session)return;
+  const done=batch.filter(u=>u.done).length;const failed=batch.length-done;
+  const summary=i18n.html`<div class="panel"><h2>${done} uploaded${failed?', '+failed+i18n.t(' need attention'):''}</h2><p>Processing continues on the server. You can leave this page.</p><a class="btn primary" href="#/documents?vault=${encodeURIComponent(body.vault_id)}">View processing progress →</a>${failed?notice(i18n.t('Correct any reported problems and choose Upload documents again. Successful files will not be uploaded twice.'),'warning'):''}</div>`;
+  if(form.isConnected&&$('upload-summary'))$('upload-summary').innerHTML=summary;
+  else toast(i18n.html`${done} documents uploaded${failed?'; '+failed+i18n.t(' need attention'):''}.`);
+  if(!failed){state.uploads=[];if(form.isConnected&&$('upload-submit'))$('upload-submit').textContent=i18n.t('Choose more files to upload');}
+ }finally{
+  if(session===state.session){state.uploadBusy=false;controls.forEach(el=>el.disabled=false);
+   if(!form.isConnected&&routeParts().path==='/upload')await render();}
+ }
 }
 
-// ------------------------------------------------------------------
-// Router
-// ------------------------------------------------------------------
+document.addEventListener('change',async event=>{
+ const target=event.target;
+ if(target.id==='ocr-mode'){$('vision-settings').hidden=target.value==='tesseract';$('vision-settings').disabled=target.value==='tesseract';}
+ if(target.id==='upload-files'||target.id==='folder-files'){
+  if(state.uploadBusy){toast(i18n.t('Wait for the current upload batch to finish.'),true);return}
+  const files=[...target.files].filter(f=>!f.name.startsWith('~$')&&/\.(pdf|docx)$/i.test(f.name));
+  if(files.length>50){toast(i18n.t('Choose up to 50 documents at a time.'),true);return}
+  state.uploads=files.map(file=>({file,title:file.name.replace(/\.(pdf|docx)$/i,'').replaceAll('_',' '),done:false}));
+  $('upload-preview').innerHTML=uploadPreview();if($('upload-summary'))$('upload-summary').innerHTML='';
+  if(files.length!==target.files.length)toast(i18n.t('Skipped unsupported files and Office temporary files.'));
+ }
 
-class Router {
-  constructor() {
-    this.routes = {
-      'home': () => app.renderHome(),
-      'search': () => app.renderSearch(),
-      'ask': () => app.renderAsk(),
-      'vaults': () => app.renderVaults(),
-      'documents': (params) => app.renderDocuments(params),
-      'upload': () => app.renderUpload(),
-      'admin': () => app.renderAdmin(),
-      'setup': () => app.renderSetup(),
-    };
-  }
+ if(target.id==='answer-feedback'&&state.answer?.history_id){try{await api.patch('/v1/history/'+state.answer.history_id,{feedback:target.value||null});toast(i18n.t('Feedback saved. Thank you.'))}catch(error){toast(error.message,true)}}
+});
 
-  navigate(page, queryString = '') {
-    const hash = queryString ? `#/${page}?${queryString}` : `#/${page}`;
-    window.location.hash = hash;
-  }
 
-  handleRoute() {
-    if (!app.state.user) return;
-
-    const hash = window.location.hash.slice(1) || '/home';
-    const [path, queryString] = hash.split('?');
-    const page = path.replace(/^\//, '') || 'home';
-
-    const params = {};
-    if (queryString) {
-      queryString.split('&').forEach(pair => {
-        const [k, v] = pair.split('=');
-        if (k && v) params[k] = decodeURIComponent(v);
-      });
-    }
-
-    if (this.routes[page]) {
-      app.showPage(page);
-      this.routes[page](params);
-    } else {
-      app.showPage('home');
-      this.routes['home']();
-    }
-  }
+async function showSharing(id){
+ const [members,people]=await Promise.all([api.get('/v1/vaults/'+id+'/members'),api.get('/v1/people')]);
+ modal(i18n.t('Collection sharing'),i18n.html`<p>Only people listed here can use this collection.</p>${members.map(m=>`<div class="list-line row-between"><span>${esc(m.name)} <span class="badge">${esc(i18n.display(m.role))}</span></span>${m.role!=='OWNER'?i18n.html`<button class="btn small danger" data-action="remove-member" data-id="${m.user_id}" data-vault="${id}">Remove</button>`:''}</div>`).join('')}<hr class="divider"><form data-form="share" data-id="${id}">${select('user_id',i18n.t('Person'),people.map(p=>[p.id,p.display_name+' ('+p.username+')']))}${select('role',i18n.t('Access'),[['VIEWER',i18n.t('Can read and ask')],['CONTRIBUTOR',i18n.t('Can read and upload')],['MANAGER',i18n.t('Can manage documents and sharing')]])}<div data-error></div><button type="submit" class="btn primary">Save access</button></form>`);
 }
-
-// ------------------------------------------------------------------
-// Start
-// ------------------------------------------------------------------
-
-document.addEventListener('DOMContentLoaded', () => app.init());
+async function showDocument(id){
+ const d=await api.get('/v1/documents/'+id);state.detail=d;
+ modal(d.title,i18n.html`${statusBadge(d.processing_state)} ${d.status==='ARCHIVED'?i18n.markup('<span class="badge">Archived</span>'):''}${d.processing_error?notice(i18n.message(d.processing_error),'warning'):''}<div class="actions"><br>${d.status==='ACTIVE'&&d.processing_state==='READY'?i18n.html`<a class="btn primary" href="#/ask?document=${d.id}&vault=${d.vault_id}" data-action="close">Ask this document</a>`:''}${button(i18n.t('Original file'),'download-original',d.id)}${d.can_manage&&d.status==='ACTIVE'&&d.processing_state==='FAILED'?button(i18n.t('Retry processing'),'retry',d.id):''}</div><hr class="divider"><form data-form="metadata" data-id="${d.id}">${input('title',i18n.t('Title'),'text',d.title,'required maxlength="300"')}${input('description',i18n.t('Description'),'text',d.description||'','maxlength="2000"')}<div class="form-grid">${input('effective_date',i18n.t('Effective from'),'date',d.effective_date||'')}${input('expiration_date',i18n.t('Effective until'),'date',d.expiration_date||'')}${input('tags',i18n.t('Tags'),'text',(d.tags||[]).join(', '))}${input('issuing_authority',i18n.t('Issued by'),'text',d.issuing_authority||'')}</div><div data-error></div><br><button type="submit" class="btn">Save details</button></form>${d.can_manage&&d.status==='ACTIVE'?button(i18n.t('Upload new version'),'new-version',d.id):''}<details><summary>Source and versions</summary><p>Original: ${esc(d.original_filename||i18n.t('Not recorded'))}</p>${(d.versions||[]).map(v=>i18n.html`<div class="list-line">Version ${v.version_number} · ${esc(i18n.display(v.status))} · ${fmtDate(v.created_at)}<button class="btn small" data-action="download-original" data-id="${d.id}" data-version="${v.version_id}">Download this version</button></div>`).join('')}</details><hr class="divider">${d.can_manage?(d.status==='ARCHIVED'?button(i18n.t('Restore document'),'restore-document',id):button(i18n.t('Archive document'),'archive-document',id,'danger')):''}<p class="source-footer">Archiving removes a document from normal search and preserves its source. Only authorized collection managers can change its lifecycle.</p>`);
+ if(!d.can_update)$('dialog').querySelectorAll('form input,form button').forEach(el=>el.disabled=true);
+}
+function answerExport(){const a=state.answer;return i18n.html`${state.question}\n\n${a.response?.content||''}\n\nSources:\n${(a.citations||[]).map((c,i)=>i18n.html`[${i+1}] ${c.document_title} — ${c.label||''}; version ${c.document_version_id}; effective ${c.effective_date||'unknown'}; page ${c.source_anchor?.page||'unknown'}`).join('\n')}\n\nEffective-on filter: ${a.as_of||today()}\nSource quotations; verify applicability and completeness.\n`;}
+function download(content,name,type='text/plain;charset=utf-8'){const blob=content instanceof Blob?content:new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),15000)}
+document.addEventListener('click',async event=>{
+ const el=event.target.closest('[data-action]');if(!el)return;const action=el.dataset.action,id=el.dataset.id;
+ if(action==='close'){$('dialog').close();return}
+ if(el.tagName==='BUTTON')event.preventDefault();if(el.disabled)return;
+ try{
+  if(action==='reload'){await init();return}
+  if(action==='logout'){stopPendingWork();try{await api.post('/v1/auth/logout');}catch(error){await render();throw error;}clearSession();navigate('/login');await render()}
+  if(action==='new-collection')modal(i18n.t('New collection'),i18n.html`<form data-form="collection">${input('name',i18n.t('Collection name'),'text','',i18n.markup('required maxlength="120" placeholder="e.g. Procurement policies"'))}${input('description',i18n.t('Description (optional)'),'text','','maxlength="500"')}<p class="muted">Only you can access a new collection until you add people in Sharing.</p><div data-error></div><button class="btn primary" type="submit">Create collection</button></form>`);
+  if(action==='choose-folder')$('folder-files').click();
+  if(action==='sharing')await showSharing(id);
+  if(action==='remove-member'){await api.delete('/v1/vaults/'+el.dataset.vault+'/members/'+id);await showSharing(el.dataset.vault);toast(i18n.t('Access removed.'))}
+  if(action==='previous-documents'||action==='next-documents'){const params=routeParts().params;params.set('offset',Math.max(0,state.documentOffset+(action==='next-documents'?100:-100)));navigate('/documents?'+params)}
+  if(action==='document')await showDocument(id);
+  if(action==='retry'){el.disabled=true;await api.post('/v1/retry',{document_id:id});toast(i18n.t('Queued for processing.'));if($('dialog').open)$('dialog').close();await render()}
+  if(action==='archive-document')modal(i18n.t('Archive document?'),i18n.html`<p>This removes the document from normal search. Its source file will be kept.</p>${button(i18n.t('Archive'),'confirm-archive',id,'danger')}`);
+  if(action==='confirm-archive'){await api.delete('/v1/documents/'+id);$('dialog').close();toast(i18n.t('Document archived.'));await render()}
+  if(action==='restore-document'){await api.post('/v1/restore',{document_id:id});$('dialog').close();toast(i18n.t('Document restored.'));await render()}
+  if(action==='new-version')modal(i18n.t('Upload a new version'),i18n.html`<p>This keeps previous source files and citations, and replaces the version used for new searches.</p><form data-form="version" data-id="${id}"><label for="revision-file">PDF or DOCX</label><input id="revision-file" name="file" type="file" accept=".pdf,.docx" required><div data-error></div><br><button type="submit" class="btn primary">Upload version</button></form>`);
+  if(action==='download-original'){const d=await api.get('/v1/documents/'+id+'/source',{include_original:true,...(el.dataset.version?{version_id:el.dataset.version}:{})});const data=Uint8Array.from(atob(d.content_base64),c=>c.charCodeAt(0));download(new Blob([data],{type:d.mime_type}),d.filename||'source.pdf')}
+  if(action==='source'){
+   const d=await api.get('/v1/documents/'+el.dataset.document+'/source',{version_id:el.dataset.version,node_id:el.dataset.node,page:el.dataset.page});
+   modal(d.title,i18n.html`<p class="muted">${esc(d.filename)} · Page ${d.page?.number||el.dataset.page}</p><span class="badge">Version ${esc(d.document_version_id)}</span>${notice(d.extraction_warning||i18n.t('Inspect this page and compare with the original file.'))}<h3>Extracted source text</h3><div class="quote">${esc(d.page?.text||d.node?.text||i18n.t('No extracted text available for this page.'))}</div><details><summary>Surrounding page text</summary><div class="quote">${esc(d.page?.text||i18n.t('Not available'))}</div></details><button class="btn" data-action="download-original" data-id="${d.document_id}" data-version="${d.document_version_id}">Download original</button>`);
+  }
+  if(action==='copy-answer'){const text=answerExport();try{await navigator.clipboard.writeText(text);toast(i18n.t('Answer and references copied.'))}catch{modal(i18n.t('Copy answer'),i18n.html`<textarea class="quote" rows="14" id="copy-text" readonly>${esc(text)}</textarea><p>Select the text and copy it.</p>`);$('copy-text').select()}}
+  if(action==='download-answer')download(answerExport(),'legal-library-answer.txt');
+  if(action==='history'){const epoch=state.epoch;const h=await api.get('/v1/history/'+id);if(epoch!==state.epoch||!$('results'))return;$('results').innerHTML=answerView(h.answer,h.question);$('results').scrollIntoView({block:'start'})}
+  if(action==='delete-history'){await api.delete('/v1/history/'+id);toast(i18n.t('Saved answer deleted.'));await render()}
+  if(action==='revoke-session'){await api.delete('/v1/account/sessions/'+id);await init()}
+  if(action==='invite'){const data=await api.post('/v1/invitations',{});modal(i18n.t('Invitation created'),i18n.html`<p>Share this one-time link privately with a colleague. It expires ${fmtDate(data.expires_at)}.</p><code class="code">${esc(location.origin+'/#/signup?code='+data.code)}</code><p class="muted">The recipient can create an approved member account. Collections still need to be shared separately.</p>`)}
+  if(action==='reset-code'){const data=await api.post('/v1/accounts/'+id+'/reset-code');modal(i18n.t('Password recovery code'),i18n.html`<p>Give this code privately to the account owner. It expires in one hour and can be used once.</p><code class="code">${esc(data.code)}</code><p>They can choose “Forgot password?” on the sign-in page.</p>`)}
+  if(['approve','disable','make-admin','make-member'].includes(action)){const update=action==='approve'?{state:'active'}:action==='disable'?{state:'disabled'}:{role:action==='make-admin'?'admin':'member'};await api.patch('/v1/accounts/'+id,update);toast(i18n.t('Account updated.'));await render()}
+  if(action==='test-ocr'){const form=el.closest('form');if(!form.reportValidity())return;const body=ocrBody(form);el.disabled=true;$('ocr-test').innerHTML=notice(i18n.t('Checking OCR…'));const result=await api.post('/v1/ocr/test',body);if($('ocr-test'))$('ocr-test').innerHTML=notice(result.message,result.reachable?'success':'warning');}
+  if(action==='test-provider'){const form=el.closest('form');if(!form.reportValidity())return;const body=Object.fromEntries(new FormData(form));body.allow_lan=form.querySelector('#provider-lan').checked;if(!body.api_key&&body.base_url.replace(/\/$/,'')===state.config.base_url.replace(/\/$/,''))delete body.api_key;el.disabled=true;const data=await api.post('/v1/setup/test',body);$('provider-test').innerHTML=notice(data.message,data.reachable?'success':'warning')}
+  if(action==='local-mode'){await api.post('/v1/setup/local');state.status=await api.get('/v1/setup/status');toast(i18n.t('Local processing enabled.'));await render()}
+  if(action==='server-status'){const data=await api.get('/v1/system');$('server-status').innerHTML=notice(i18n.t('The server is responding. ')+(data.document_count??'')+i18n.t(' documents visible to your account.'),'success')}
+ }catch(error){if(error.name!=='AbortError')toast(error.message,true)}finally{el.disabled=false}
+});
+window.addEventListener('hashchange',()=>{if($('dialog').open)$('dialog').close();render()});
+window.addEventListener('beforeunload',event=>{if(state.uploadBusy){event.preventDefault();event.returnValue='';}});
+window.addEventListener('session-expired',()=>{if(state.user){clearSession();toast(i18n.t('Your session ended. Please sign in again.'));navigate('/login');render()}});
+document.addEventListener('input',event=>{if(event.target.id!=='language-select')languageDirty=true;});
+document.getElementById('language-select').addEventListener('change',event=>{
+ const target=event.target;
+ if(state.uploadBusy){target.value=i18n.language;toast(i18n.t('Wait for the current upload batch to finish.'),true);return;}
+ if((languageDirty||state.uploads.length)&&!confirm(i18n.t('Changing language reloads this page. Unsaved entries and selected files will be cleared. Continue?'))){target.value=i18n.language;return;}
+ if(!i18n.change(target.value)){target.value=i18n.language;toast(i18n.t('Language could not be saved. Allow this site to store preferences and try again.'),true);return;}
+ location.reload();
+});
+init();

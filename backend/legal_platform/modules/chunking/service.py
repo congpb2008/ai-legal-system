@@ -136,7 +136,7 @@ class ChunkingService:
         if doc is None:
             raise ValueError(f"Document {document_id} not found")
 
-        vid = version_id or doc.versions[0].version_id
+        vid = version_id or doc.current_version.version_id
 
         # Retrieve the Knowledge Tree
         tree = self.parser_service.get_tree_for_version(vid)

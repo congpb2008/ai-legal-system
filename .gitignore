@@ -42,7 +42,7 @@ secrets/
 credentials/
 
 # Database & Runtime local storage
-storage/
+/storage/
 *.db
 *.sqlite
 *.sqlite3
@@ -79,3 +79,9 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Optional browser regression dependencies
+node_modules/
+
+# Generated private OCR runtime (reproduced by packaging/prepare_ocr.py)
+/ocr/

@@ -93,8 +93,10 @@ class OcrService:
     ):
         self.registry = registry or DocumentRegistry()
         self.storage = file_storage or LocalFileStorage()
+        from legal_platform.modules.ocr_service.vision import ConfiguredImageEngine
         self.engine = ocr_engine or AutoOcrEngine(
             digital_engine=PyMuPdfDigitalExtractor(),
+            image_engine=ConfiguredImageEngine(),
         )
         # Ensure OCR result table + audit table exist
         init_audit_log(self.registry.repo.conn)
@@ -167,7 +169,7 @@ class OcrService:
             raise OcrEngineError(f"Failed to retrieve file from storage: {e}") from e
 
         return self.process_bytes(
-            document_id, file_bytes, user_id=user_id, version_id=doc.versions[0].version_id,
+            document_id, file_bytes, user_id=user_id, version_id=doc.current_version.version_id,
         )
 
     # ------------------------------------------------------------------
@@ -200,7 +202,7 @@ class OcrService:
                 f"expected OCR_PENDING"
             )
 
-        vid = version_id or doc.versions[0].version_id
+        vid = version_id or doc.current_version.version_id
 
         # --- transition to OCR_RUNNING ---
         self.registry.transition_processing(
@@ -290,8 +292,8 @@ class OcrService:
                 result.engine,
                 result.engine_version,
                 result.total_pages,
-                result.confidence.page_average,
-                result.confidence.page_min,
+                result.confidence.page_average or 0.0,
+                result.confidence.page_min or 0.0,
                 utc_iso(result.created_at),
                 _json.dumps(result.warnings, ensure_ascii=False),
                 _json.dumps(_serialize(result), ensure_ascii=False, default=str),

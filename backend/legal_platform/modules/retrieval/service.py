@@ -89,6 +89,7 @@ class RetrievalService:
         top_k: int = 10,
         strategy: "str | RetrievalStrategy" = RetrievalStrategy.HYBRID,
         threshold: "float | None" = None,
+        as_of: "str | None" = None,
     ) -> RetrievalResult:
         """Execute a retrieval query.
 
@@ -121,6 +122,9 @@ class RetrievalService:
         # Normalize strategy
         if isinstance(strategy, str):
             strategy = RetrievalStrategy(strategy.upper())
+
+        if self.embedding_service.engine.MODEL_NAME == 'local-keyword':
+            strategy = RetrievalStrategy.KEYWORD
 
         # --- Query embedding (for semantic search) ---
         query_vector: Optional[list[float]] = None
@@ -167,8 +171,12 @@ class RetrievalService:
             semantic_results=semantic_results,
             keyword_results=keyword_results,
             query=query,
-            top_k=top_k,
+            top_k=max(top_k * 10, 100),
         )
+        from legal_platform.grounding import applicable
+        evidence = applicable(evidence, self.registry, as_of)[:top_k]
+        for rank, item in enumerate(evidence, 1):
+            item.rank = rank
 
         elapsed_ms = (time.time() - start_time) * 1000
 

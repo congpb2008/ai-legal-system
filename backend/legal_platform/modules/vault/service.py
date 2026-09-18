@@ -187,7 +187,7 @@ class VaultService:
         vault_type: "VaultType | None" = None,
         status: "VaultStatus | None" = None,
         user_id: "str | None" = None,
-        limit: int = 100,
+        limit: int | None = 100,
         offset: int = 0,
     ) -> list[Vault]:
         """List Vaults with optional filtering.
@@ -203,7 +203,7 @@ class VaultService:
             A list of Vaults.
         """
         clauses: list[str] = []
-        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        params: dict[str, Any] = {"limit": -1 if limit is None else limit, "offset": offset}
 
         if vault_type is not None:
             clauses.append("vault_type = :vault_type")
@@ -214,7 +214,7 @@ class VaultService:
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         if user_id is None:
             rows = self._conn.execute(
-                f"SELECT * FROM vault{where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset",
+                f"SELECT * FROM vault{where} ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset",
                 params,
             )
             return [self._vault_from_row(r) for r in rows]
@@ -222,14 +222,14 @@ class VaultService:
         # Membership lives in JSON for the MVP. Filter parsed identities rather
         # than SQL LIKE, which lets identifiers such as `user-1` match `user-10`.
         rows = self._conn.execute(
-            f"SELECT * FROM vault{where} ORDER BY created_at DESC",
+            f"SELECT * FROM vault{where} ORDER BY created_at DESC, id DESC",
             {key: value for key, value in params.items() if key not in {"limit", "offset"}},
         )
         authorized = [
             vault for vault in (self._vault_from_row(row) for row in rows)
             if vault.has_member(user_id)
         ]
-        return authorized[offset:offset + limit]
+        return authorized[offset:None if limit is None else offset + limit]
 
     # ------------------------------------------------------------------
     # Update Vault
@@ -665,7 +665,7 @@ class VaultService:
         if isinstance(permission, str):
             permission = Permission(permission.upper())
 
-        vaults = self.list_vaults(user_id=user_id, status=VaultStatus.ACTIVE)
+        vaults = self.list_vaults(user_id=user_id, status=VaultStatus.ACTIVE, limit=None)
         return [
             v.id for v in vaults
             if v.has_permission(user_id, permission)

@@ -240,7 +240,7 @@ class TestScannedPdfDetection:
     def test_auto_engine_falls_back_to_image(self, scanned_pdf_bytes):
         """AutoOcrEngine should report that image OCR is needed."""
         engine = AutoOcrEngine(digital_engine=PyMuPdfDigitalExtractor())
-        with pytest.raises(OcrEngineError, match="scanned"):
+        with pytest.raises(OcrEngineError, match="little or no embedded text"):
             engine.extract(
                 content=scanned_pdf_bytes,
                 document_id=new_id(),

@@ -14,6 +14,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from legal_platform.contracts.common import now_utc, utc_iso
+from legal_platform import __version__
 
 
 class DatasetType(str, Enum):
@@ -58,6 +59,7 @@ class CaseCategory(str, Enum):
     NAVIGATION = "NAVIGATION"
     CROSS_DOCUMENT = "CROSS_DOCUMENT"
     FACT_LOOKUP = "FACT_LOOKUP"
+    ABSTENTION = "ABSTENTION"
     SUMMARY = "SUMMARY"
     CALCULATION = "CALCULATION"
 
@@ -110,6 +112,10 @@ class BenchmarkCase:
     expected_nodes: list[str] = field(default_factory=list)
     expected_citations: list[dict[str, str]] = field(default_factory=list)
     expected_answer: Optional[str] = None
+    expected_abstention: bool = False
+    required_phrases: list[str] = field(default_factory=list)
+    forbidden_phrases: list[str] = field(default_factory=list)
+    expert_approved: bool = False
     evaluation: dict[str, bool] = field(default_factory=lambda: {
         "retrieval": True, "citation": True, "generation": True,
     })
@@ -244,7 +250,7 @@ class EvaluationReport:
     report_id: str
     suite_name: str = ""
     dataset_name: str = ""
-    system_version: str = "0.1.0"
+    system_version: str = __version__
     executed_at: str = field(default_factory=lambda: utc_iso(now_utc()))
     total_cases: int = 0
     passed_cases: int = 0

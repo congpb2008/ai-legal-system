@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "legal-platform"
-version = "0.1.0"
+version = "0.2.4"
 description = "Legal Knowledge Platform — evidence-grounded legal Q&A (Banking Legal Platform)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -14,6 +14,9 @@ dependencies = [
     "pymupdf>=1.23,<2",
     "pdf2image>=1.16,<2",
     "pytesseract>=0.3,<0.4",
+    "cheroot>=11.1,<12",
+    "cryptography>=46,<48",
+    "pywin32>=308,<400; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -32,3 +35,8 @@ minversion = "7.4"
 testpaths = ["tests"]
 addopts = "-ra -q"
 pythonpath = ["backend"]
+[tool.setuptools.data-files]
+"share/legal-platform/frontend" = ["frontend/index.html"]
+"share/legal-platform/frontend/css" = ["frontend/css/main.css"]
+"share/legal-platform/frontend/js" = ["frontend/js/app.js", "frontend/js/api.js"]
+"share/legal-platform/design" = ["design/system-prompt.md"]

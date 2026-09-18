@@ -53,6 +53,8 @@ def populated_index(retrieval_service):
     doc_id = new_id()
     vault_id = new_id()
 
+    doc = retrieval_service.registry.register_document(user_id='test',document_type='LAW',title='Server procurement',issuing_authority='Test',vault_id=vault_id,organization_id=new_id())
+    doc_id = doc.id
     topics = [
         "Điều 1. Phạm vi điều chỉnh mua sắm máy chủ",
         "Điều 2. Đối tượng áp dụng quy chế mua sắm",
@@ -65,7 +67,7 @@ def populated_index(retrieval_service):
         emb = EmbeddingRecord(
             chunk_id=new_id(),
             document_id=doc_id,
-            version_id=new_id(),
+            version_id=doc.current_version.version_id,
             vector=embedder.embed(topic),
             dimension=embedder.DIMENSION,
             model=embedder.MODEL_NAME,

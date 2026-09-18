@@ -253,6 +253,10 @@ class Document(BaseModel):
     versions: list[DocumentVersionReference] = Field(min_length=1)
 
     # ------------------------------------------------------------------ helpers
+    @property
+    def current_version(self):
+        return next(v for v in self.versions if v.status == DocumentVersionStatus.ACTIVE)
+
     def touch(self, *, now: datetime | None = None) -> None:
         """Update ``updated_at`` to mark the Document touched (e.g. metadata edit)."""
         self.updated_at = now or now_utc()

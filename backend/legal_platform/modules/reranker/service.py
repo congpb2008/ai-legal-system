@@ -111,6 +111,7 @@ class RerankerService:
         document_id: "UUID | None" = None,
         top_k: int = 20,
         strategy: str = "HYBRID",
+        as_of: "str | None" = None,
     ) -> tuple[list[RerankedEvidence], RerankerMetadata]:
         """Execute a search and rerank the results.
 
@@ -136,6 +137,7 @@ class RerankerService:
             document_id=document_id,
             top_k=top_k,
             strategy=strategy,
+            as_of=as_of,
         )
 
         return self.rerank(retrieval_result, query=query)

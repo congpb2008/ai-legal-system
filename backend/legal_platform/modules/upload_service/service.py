@@ -336,6 +336,8 @@ class UploadService:
             )
         # Guess from extension
         guessed, _ = mimetypes.guess_type(filename)
+        extension = filename.rsplit('.', 1)[-1].lower()
+        guessed = {'pdf': 'application/pdf', 'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}.get(extension, guessed)
         if guessed and guessed in SUPPORTED_MIME_TYPES:
             return guessed
         if guessed and guessed in FUTURE_MIME_TYPES:
@@ -383,8 +385,6 @@ class UploadService:
         """Validate the actual Word package before immutable persistence."""
         try:
             with zipfile.ZipFile(BytesIO(content)) as package:
-                if package.testzip() is not None:
-                    raise CorruptedUpload("DOCX package contains a corrupted entry")
                 names = set(package.namelist())
                 if "word/document.xml" not in names:
                     raise CorruptedUpload(
@@ -395,6 +395,10 @@ class UploadService:
                     raise CorruptedUpload(
                         "DOCX expanded content exceeds the safe processing limit"
                     )
+                if len(package.infolist()) > 10000 or total_uncompressed > 100 * 1024 * 1024 or package.getinfo('word/document.xml').file_size > 25 * 1024 * 1024:
+                    raise CorruptedUpload('DOCX expanded content exceeds the safe processing limit')
+                if package.testzip() is not None:
+                    raise CorruptedUpload('DOCX package contains a corrupted entry')
                 document_xml = package.read("word/document.xml")
         except zipfile.BadZipFile as exc:
             raise CorruptedUpload("File declared as DOCX is not a valid ZIP package") from exc

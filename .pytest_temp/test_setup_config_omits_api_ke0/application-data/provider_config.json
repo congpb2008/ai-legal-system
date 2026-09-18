@@ -1,0 +1,12 @@
+{
+  "provider_type": "openai_compatible",
+  "base_url": "http://localhost:11434/v1",
+  "api_key": "sk-test-secret-key-12345",
+  "model": "llama3",
+  "timeout_seconds": 60,
+  "max_tokens": 4096,
+  "temperature": 0.1,
+  "reasoning_effort": "",
+  "embedding_model": "bge-m3",
+  "allow_lan": false
+}

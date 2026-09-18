@@ -46,7 +46,7 @@ class DocumentPipeline:
             return ["document is missing"]
         if not document.versions:
             return ["document has no version"]
-        version_id = document.versions[0].version_id
+        version_id = document.current_version.version_id
         conn = self.registry.repo.conn
 
         storage_ref = self.registry.get_source_storage_ref(document_id)
@@ -261,7 +261,7 @@ class DocumentPipeline:
         document = self.registry.get_document(document_id)
         if document is None:
             raise ValueError(f"Document {document_id} not found")
-        version_id = document.versions[0].version_id
+        version_id = document.current_version.version_id
 
         try:
             if stage == "ocr":

@@ -1,0 +1,46 @@
+# Standalone hosted deployment: docker compose -f docker-compose.hosted.yml up -d --build
+services:
+  legal-platform:
+    build: .
+    image: legal-knowledge-platform:0.2.1
+    restart: unless-stopped
+    init: true
+    environment:
+      LEGAL_PLATFORM_HOST: 0.0.0.0
+      LEGAL_PLATFORM_PORT: 8080
+      LEGAL_PLATFORM_DATA_DIR: /app/storage
+      LEGAL_PLATFORM_PUBLIC_ORIGIN: https://${LEGAL_PLATFORM_DOMAIN:?Set LEGAL_PLATFORM_DOMAIN to your library hostname}
+      LEGAL_PLATFORM_TRUSTED_PROXIES: ${LEGAL_PLATFORM_PROXY_ADDRESS:-172.30.84.2}/32
+      LEGAL_PLATFORM_STORAGE_LIMIT_MB: ${LEGAL_PLATFORM_STORAGE_LIMIT_MB:-2048}
+    volumes:
+      - ${LEGAL_PLATFORM_HOST_DATA_DIR:-./storage}:/app/storage
+    networks:
+      - library
+    # Intentionally no host port: only Caddy can reach this private backend.
+  caddy:
+    image: caddy:2.11.2-alpine
+    restart: unless-stopped
+    environment:
+      LEGAL_PLATFORM_DOMAIN: ${LEGAL_PLATFORM_DOMAIN:?Set LEGAL_PLATFORM_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deployment/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      library:
+        ipv4_address: ${LEGAL_PLATFORM_PROXY_ADDRESS:-172.30.84.2}
+    depends_on:
+      legal-platform:
+        condition: service_healthy
+networks:
+  library:
+    ipam:
+      config:
+        - subnet: ${LEGAL_PLATFORM_PROXY_SUBNET:-172.30.84.0/24}
+volumes:
+  caddy-data:
+  caddy-config:
