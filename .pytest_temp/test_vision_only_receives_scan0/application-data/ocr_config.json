@@ -1,0 +1,10 @@
+{
+  "mode": "vision",
+  "base_url": "http://127.0.0.1:57916/v1",
+  "model": "test-vision",
+  "api_key": "",
+  "allow_lan": false,
+  "timeout_seconds": 120,
+  "max_tokens": 8192,
+  "max_vision_pages": 50
+}
